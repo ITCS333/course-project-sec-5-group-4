@@ -19,15 +19,15 @@ let users = [];
 // the HTML document is parsed before this script runs.
 
 // TODO: Select the user table body element with id="user-table-body".
-
+const userTableBody = document.getElementById("user-table-body");
 // TODO: Select the "Add User" form with id="add-user-form".
-
+const addUserForm = document.getElementById("add-user-form");
 // TODO: Select the "Change Password" form with id="password-form".
-
+const passwordForm = document.getElementById("password-form");
 // TODO: Select the search input field with id="search-input".
-
+const searchInput = document.getElementById("search-input");
 // TODO: Select all table header (th) elements inside the thead of id="user-table".
-
+const tableHeaders = document.querySelectorAll("#user-table thead th");
 // --- Functions ---
 
 /**
@@ -43,6 +43,19 @@ let users = [];
  */
 function createUserRow(user) {
   // ... your implementation here ...
+  const tr = document.createElement("tr");
+   tr.innerHTML = `
+    <td>${user.name}</td>
+    <td>${user.email}</td>
+    <td>${user.is_admin == 1 ? "Yes" : "No"}</td>
+    <td>
+      <button class="btn edit-btn" data-id="${user.id}">Edit</button>
+      <button class="btn delete-btn" data-id="${user.id}">Delete</button>
+    </td>
+  `;
+
+  return tr;
+
 }
 
 /**
@@ -55,6 +68,11 @@ function createUserRow(user) {
  */
 function renderTable(userArray) {
   // ... your implementation here ...
+  userTableBody.innerHTML = "";
+  userArray.forEach(user => {
+    const row = createUserRow(user);
+    userTableBody.appendChild(row);
+  })
 }
 
 /**
@@ -74,6 +92,54 @@ function renderTable(userArray) {
  */
 function handleChangePassword(event) {
   // ... your implementation here ...
+  event.preventDefault();
+
+  const current_password = document.getElementById("current-password").value;
+  const new_password = document.getElementById("new-password").value;
+  const confirm_password = document.getElementById("confirm-password").value;
+
+
+  if (new_password !== confirm_password) {
+    alert("Passwords do not match.");
+    return;
+  }
+
+  if (new_password.length < 8) {
+    alert("Password must be at least 8 characters.");
+    return;
+  }
+
+  const userId = loggedInUserId; 
+
+  fetch('../api/index.php?action=change_password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      id: userId,
+      current_password: current_password,
+      new_password: new_password
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert("Password updated successfully!");
+
+      document.getElementById("current-password").value = "";
+      document.getElementById("new-password").value = "";
+      document.getElementById("confirm-password").value = "";
+    } else {
+      alert(data.message || "Failed to update password.");
+    }
+  })
+  .catch(error => {
+    console.error(error);
+    alert("Network error. Please try again.");
+  });
+
+
 }
 
 /**
@@ -94,6 +160,51 @@ function handleChangePassword(event) {
  */
 function handleAddUser(event) {
   // ... your implementation here ...
+  event.preventDefault();
+
+  const name = document.getElementById("user-name").value.trim();
+  const email = document.getElementById("user-email").value.trim();
+  const password = document.getElementById("default-password").value;
+  const isAdmin = document.getElementById("is-admin").checked ? 1 : 0;
+
+  if (!name || !email || !password) {
+    alert("Please fill out all required fields.");
+    return;
+  }
+
+  if (password.length < 8) {
+    alert("Password must be at least 8 characters.");
+    return;
+  }
+
+  fetch('../api/index.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        name: name, 
+        email: email, 
+        password: password, 
+        is_admin: isAdmin 
+    })
+  })
+  .then(response => {
+    if (response.status === 201) {
+      alert('User added successfully!');
+     addUserForm.reset();
+      loadUsersAndInitialize();
+    } else {
+     
+      return response.json().then(data => {
+        alert(data.error || data.message || 'Failed to add user.');
+      });
+    }
+  })
+  .catch(error => {
+    console.error('Network error:', error);
+    alert('Network error. Please try again.');
+  });
+
+
 }
 
 /**
@@ -113,6 +224,77 @@ function handleAddUser(event) {
  */
 function handleTableClick(event) {
   // ... your implementation here ...
+  const id = event.target.getAttribute("data-id");
+
+  // DELETE
+  if (event.target.classList.contains("delete-btn")) {
+
+    fetch(`../api/index.php?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      credentials: "same-origin"
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+
+          users = users.filter(user => user.id != id);
+          renderTable(users);
+
+        } else {
+          alert(data.message || "Error occurred while deleting user");
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("Server error while deleting user");
+      });
+  }
+
+  // EDIT
+  if (event.target.classList.contains("edit-btn")) {
+
+    const user = users.find(u => u.id == id);
+    if (!user) return;
+
+    const newName = prompt("Edit Name:", user.name);
+    const newEmail = prompt("Edit Email:", user.email);
+
+    if (!newName || !newEmail) return;
+
+    fetch("../api/index.php", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        id: id,
+        name: newName,
+        email: newEmail
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+
+          users = users.map(u =>
+            u.id == id ? { ...u, name: newName, email: newEmail } : u
+          );
+
+          renderTable(users);
+
+          alert("Updated successfully");
+
+        } else {
+          alert(data.message || "Update failed");
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        alert("Server error while updating user");
+      });
+  }
+
 }
 
 /**
@@ -128,6 +310,20 @@ function handleTableClick(event) {
  */
 function handleSearch(event) {
   // ... your implementation here ...
+   const term = event.target.value.trim().toLowerCase();
+
+  if (!term) {
+    renderTable(users);
+    return;
+  }
+
+ 
+  const filtered = users.filter(user =>
+    user.name.toLowerCase().includes(term) ||
+    user.email.toLowerCase().includes(term)
+  );
+
+  renderTable(filtered)
 }
 
 /**
@@ -149,6 +345,47 @@ function handleSearch(event) {
  */
 function handleSort(event) {
   // ... your implementation here ...
+   const th = event.currentTarget;
+    const index = th.cellIndex;
+    
+   
+    const keys = ["name", "email", "is_admin"];
+    const key = keys[index];
+
+  
+    if (!key) return;
+
+    let direction = th.getAttribute("data-sort-dir") === "asc" ? "desc" : "asc";
+    
+   
+    const allHeaders = th.parentNode.cells;
+    for (let cell of allHeaders) {
+        cell.removeAttribute("data-sort-dir");
+    }
+    
+   
+    th.setAttribute("data-sort-dir", direction);
+
+    users.sort((a, b) => {
+        let valA = a[key];
+        let valB = b[key];
+
+        let result;
+        if (key === "is_admin") {
+          
+            result = Number(valA) - Number(valB);
+        } else {
+           
+            result = String(valA).localeCompare(String(valB));
+        }
+
+    
+        return direction === "asc" ? result : -result;
+    });
+
+
+    renderTable(users);
+
 }
 
 /**
@@ -170,6 +407,42 @@ function handleSort(event) {
  */
 async function loadUsersAndInitialize() {
   // ... your implementation here ...
+  try {
+
+    const response = await fetch('../api/index.php');
+
+    
+    if (!response.ok) {
+      console.error("Failed to fetch users:", response.status);
+      alert("Failed to load users");
+      return;
+    }
+
+    const result = await response.json();
+
+    users = result.data || [];
+    renderTable(users);
+
+    if (!window.initialized) {
+
+      addUserForm.addEventListener("submit", handleAddUser);
+      passwordForm.addEventListener("submit", handleChangePassword);
+
+      userTableBody.addEventListener("click", handleTableClick);
+      searchInput.addEventListener("input", handleSearch);
+
+      tableHeaders.forEach(th => {
+        th.addEventListener("click", handleSort);
+      });
+
+      window.initialized = true;
+    }
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error loading data");
+  }
+
 }
 
 // --- Initial Page Load ---
