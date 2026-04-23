@@ -10,21 +10,29 @@
 <html lang="en">
 <head>
     <!-- TODO: Add the 'meta' tag for character encoding (UTF-8). -->
+        <meta charset="UTF-8">
 
     <!-- TODO: Add the responsive 'viewport' meta tag. -->
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- TODO: Add a 'title' for the page, e.g., "Admin Portal". -->
+      <title>Admin Portal</title>
 
     <!-- TODO: Link to a CSS file or a CSS framework. -->
+     <link rel="stylesheet" href="style.css">
 
     <!-- TODO: Add a <script> tag that loads 'manage_users.js' with the 'defer' attribute.
          Example: <script src="manage_users.js" defer></script> -->
+         <script src="manage_users.js" defer></script>
 
 </head>
 <body>
 
     <!-- TODO: Create a 'header' element for the top of the page. -->
         <!-- TODO: Inside the header, add a main heading (e.g., 'h1') with the text "Admin Portal". -->
+         <header>
+        <h1>Admin Portal</h1>
+    </header>
     <!-- End of the header. -->
 
     <!-- TODO: Create a 'main' element to hold the primary content of the portal. -->
@@ -66,6 +74,32 @@
                 <!-- End of the fieldset. -->
             <!-- End of the password form. -->
         <!-- End of the password management section. -->
+         <main>
+        <section>
+
+            <h2>Change Your Password</h2>
+
+            <form action="#" id="password-form">
+
+                <fieldset>
+                    <legend>Password Update</legend>
+
+                    <label for="current-password">Current Password</label>
+                    <input type="password" id="current-password" required>
+
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" minlength="8" required>
+
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" required>
+
+                    <button type="submit" id="change">Update Password</button>
+
+                </fieldset>
+
+            </form>
+
+        </section>
 
 
         <!-- Section 2: User Management -->
@@ -116,6 +150,43 @@
                     <!-- End of the fieldset. -->
                 <!-- End of the add user form. -->
             <!-- End of the 'details' element. -->
+             <section>
+
+            <h2>Manage Users</h2>
+
+            <!-- ADD USER -->
+            <details>
+
+                <summary>Add New User</summary>
+
+                <form action="#" id="add-user-form">
+
+                    <fieldset>
+                        <legend>New User Information</legend>
+
+                        <label for="user-name">Full Name</label>
+                        <input type="text" id="user-name" required>
+
+                        <label for="user-email">Email</label>
+                        <input type="email" id="user-email" required>
+
+                        <label for="default-password">Password</label>
+                        <input type="password" id="default-password" minlength="8" required>
+
+                        <label for="is-admin">Role</label>
+                        <select id="is-admin">
+                            <option value="0">Student</option>
+                            <option value="1">Admin</option>
+                        </select>
+
+                        <button type="submit" id="add">Add User</button>
+
+                    </fieldset>
+
+                </form>
+
+            </details>
+
 
 
             <!-- Subsection 2.2: User List -->
@@ -145,6 +216,30 @@
         <!-- End of the user management section. -->
 
     <!-- End of the main content area. -->
+      <h3>Registered Users</h3>
+
+            <input type="text" id="search-input" placeholder="Search by name or email...">
+
+            <table id="user-table">
+
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Admin</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="user-table-body">
+                    <!-- JS will fill this -->
+                </tbody>
+
+            </table>
+
+        </section>
+
+    </main>
 
 </body>
 </html>
