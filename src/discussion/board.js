@@ -72,18 +72,18 @@ function createTopicArticle(topic) {
   tbutton2=document.createElement('button');
 
   tA.textContent=topic.subject;
-  tA.href='topic.html?id=${topic.id}';
+  tA.href=`topic.html?id=${topic.id}`;
   
   tH.appendChild(tA);
 
-  tFooter.textContent= 'Posted by: ${topic.author} on ${topic.created_at}';
+  tFooter.textContent= `Posted by: ${topic.author} on ${topic.created_at}`;
 
-  tbutton1.classLits.add('edit-btn');
+  tbutton1.classList.add('edit-btn');
   tbutton1.type='button';
   tbutton1.dataset.id=topic.id;
   tbutton1.textContent='Edit';
 
-  tbutton2.classLits.add('elete-btn');
+  tbutton2.classList.add('elete-btn');
   tbutton2.type='button';
   tbutton2.dataset.id=topic.id;
   tbutton2.textContent='Delete';
@@ -94,6 +94,8 @@ function createTopicArticle(topic) {
   tArticle.appendChild(tH);
   tArticle.appendChild(tFooter);
   tArticle.appendChild(tDiv);
+
+  return tArticle;
 }
 
 /**
@@ -162,7 +164,7 @@ async function handleCreateTopic(event) {
       subject: subject,
       message: message,
       author: "Student",
-      created_at: new Date.toISOString().replace('T',' ').substring(0, 19)
+      created_at: new Date().toISOString().replace('T',' ').substring(0, 19)
     };
     topics.push(entry);
     renderTopics();
@@ -206,9 +208,9 @@ async function handleUpdateTopic(id, fields) {
     topics.map(topic=>{
       if(String(topic.id)==String(id)){
         return{
-          subject: topic.subject,
-          message: topic.message,
-          ...topic
+          ...topic,
+          subject: fields.subject,
+          message: fields.message        
         };
       }
       return topic;
@@ -237,7 +239,7 @@ async function handleUpdateTopic(id, fields) {
  */
 async function handleTopicListClick(event) {
   // ... your implementation here ...
-  if(event.target.classList.conatains('delete-btn')){
+  if(event.target.classList.contains('delete-btn')){
     const id=event.target.dataset.id;
 
     const response = await fetch('./api/index.php?id='+id,{
@@ -248,7 +250,7 @@ async function handleTopicListClick(event) {
 
     if(result.success === true){
       topics=topics.filter(topic=> String(topic.id)!= String(id));
-      
+      renderTopics();
     }
     
   }
@@ -264,7 +266,7 @@ async function handleTopicListClick(event) {
     document.querySelector('#topic-subject').value= topic.subject;
     document.querySelector('#topic-message').value= topic.message;
 
-    changeBtn=document.querySelector(#create-topic);
+    changeBtn=document.querySelector('#create-topic');
     changeBtn.textContent= "Update Topic";
     changeBtn.dataset.id=topic.id;
   }

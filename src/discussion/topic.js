@@ -86,9 +86,9 @@ function getTopicIdFromURL() {
  */
 function renderOriginalPost(topic) {
   // ... your implementation here ...
-  topicSubject.textContent=topic.subject;
-  opMessage.textContent=topic.message;
-  opFooter.textContent= "Posted by: " +topic.author+" on " +topic.created_at;
+  topicSubject.textContent = topic.subject;
+  opMessage.textContent = topic.message;
+  opFooter.textContent = "Posted by: " +topic.author+" on " +topic.created_at;
 }
 
 /**
@@ -117,7 +117,7 @@ function createReplyArticle(reply) {
   repP=document.createElement('p');
   repFooter=document.createElement('footer');
   repDiv=document.createElement('div');
-  repButton==document.createElement('button');
+  repButton=document.createElement('button');
 
   repP.textContent=reply.text;
   
@@ -126,7 +126,7 @@ function createReplyArticle(reply) {
   repButton.classList.add('delete-reply-btn');
   repButton.type='button';
   repButton.dataset.id=reply.id;
-  repButton.textContent=Delete;
+  repButton.textContent='Delete';
 
   repDiv.appendChild(repButton);
 
@@ -152,7 +152,7 @@ function renderReplies() {
   currentReplies.forEach(reply =>
   {
     const newReply=createReplyArticle(reply);
-    replyListContainer.appendChild(newRpely);
+    replyListContainer.appendChild(newReply);
   });
 }
 
@@ -178,7 +178,7 @@ function renderReplies() {
  */
 async function handleAddReply(event) {
   // ... your implementation here ...
-  event.prevenpreventDefault();
+  event.preventDefault();
 
   const replyCheck= newReplyText.value.trim();
 
@@ -196,7 +196,7 @@ async function handleAddReply(event) {
     body:JSON.stringify({
       topic_id:currentTopicId,
       author: "Student",
-      text: replyText
+      text: replyCheck
     })
 
   });
@@ -228,7 +228,7 @@ async function handleReplyListClick(event) {
 
     const intId=event.target.dataset.id;
 
-    const response = await fetch('./api/index.php?action=delete_reply&id='+id,{
+    const response = await fetch('./api/index.php?action=delete_reply&id='+intId,{
     method:'DELETE'
     });
 
@@ -277,8 +277,8 @@ async function initializePage() {
 
   const [tResponse,rResponse]= await Promise.all([
     
-    fetch('./api/index.php?id=${currentTopicId}'),
-    fetch('./api/index.php?action=replies&topic_id=${currentTopicId}')
+    fetch(`./api/index.php?id=${currentTopicId}`),
+    fetch(`./api/index.php?action=replies&topic_id=${currentTopicId}`)
 
   ]);
   const tResult =await tResponse.json();
@@ -288,7 +288,7 @@ async function initializePage() {
   }
 
   if(tResult.success ===true){
-    renderOriginalPost(tResponse.data);
+    renderOriginalPost(tResult.data);
     renderReplies();
     replyForm.addEventListener('submit',handleAddReply);
     replyListContainer.addEventListener('click',handleReplyListClick);
