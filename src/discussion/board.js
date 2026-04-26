@@ -83,7 +83,7 @@ function createTopicArticle(topic) {
   tbutton1.dataset.id=topic.id;
   tbutton1.textContent='Edit';
 
-  tbutton2.classList.add('elete-btn');
+  tbutton2.classList.add('delete-btn');
   tbutton2.type='button';
   tbutton2.dataset.id=topic.id;
   tbutton2.textContent='Delete';
@@ -242,7 +242,7 @@ async function handleTopicListClick(event) {
   if(event.target.classList.contains('delete-btn')){
     const id=event.target.dataset.id;
 
-    const response = await fetch('./api/index.php?id='+id,{
+    const response = await fetch(`./api/index.php?id=${id}`,{
     method:'DELETE'
     });
 
