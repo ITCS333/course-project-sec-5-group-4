@@ -206,7 +206,7 @@ async function handleAddReply(event) {
   if(resResult.success === true){
     currentReplies.push(resResult.data);
     renderReplies();
-    newReplyText.value='';
+    newReplyText.value = "";
   }
   
 }
