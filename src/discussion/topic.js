@@ -180,31 +180,28 @@ async function handleAddReply(event) {
   // ... your implementation here ...
   event.preventDefault();
 
-  const replyCheck= newReplyText.value.trim();
+  const replyText = newReplyText.value.trim();
 
-  if(!replyCheck){
+  if (!replyText) {
     return;
   }
-  
-  const response = await fetch('./api/index.php?action=reply',{
-    method:'POST',
 
-    headers:{
-      'content-type': 'application/json'
+  const response = await fetch("./api/index.php?action=reply", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-
-    body:JSON.stringify({
-      topic_id:currentTopicId,
+    body: JSON.stringify({
+      topic_id: currentTopicId,
       author: "Student",
-      text: replyCheck
+      text: replyText,
     })
-
   });
 
-  const resResult = await response.json();
+  const result = await response.json();
 
-  if(resResult.success === true){
-    currentReplies.push(resResult.data);
+  if (result.success === true) {
+    currentReplies.push(result.data);
     renderReplies();
     newReplyText.value = "";
   }
