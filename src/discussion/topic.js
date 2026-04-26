@@ -66,9 +66,9 @@ const newReplyText= document.querySelector('#new-reply');
  */
 function getTopicIdFromURL() {
   // ... your implementation here ...
-  const Parameters= new URLSearchParams('window.location.search');
-  const para= Parameters.get(id);
-  return para;
+  const Parameters= new URLSearchParams(window.location.search);
+  return Parameters.get('id'); 
+   
 }
 
 /**
