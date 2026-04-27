@@ -36,26 +36,42 @@
 // Allow cross-origin requests (CORS) if needed.
 // Allow specific HTTP methods: GET, POST, PUT, DELETE, OPTIONS.
 // Allow specific headers: Content-Type, Authorization.
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header('Access-Control-Allow-Credentials: true');
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
 
 
 // TODO: Handle preflight OPTIONS request.
 // If the request method is OPTIONS, return HTTP 200 and exit.
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 
 // TODO: Include the database connection file.
 // Assume a function getDBConnection() is available that returns a PDO instance
 // configured for the 'course' database (see schema.sql).
+require_once __DIR__ . '/../../db.php';
+
+
 
 
 // TODO: Get the PDO database connection by calling getDBConnection().
-
+$pdo = getDBConnection();
 
 // TODO: Read the HTTP request method from $_SERVER['REQUEST_METHOD'].
-
+$method = $_SERVER['REQUEST_METHOD'];
 
 // TODO: Read the raw request body for POST and PUT requests.
 // Use file_get_contents('php://input') and decode with json_decode($raw, true).
 
+$raw = file_get_contents('php://input');
+$data = json_decode($raw, true);
 
 // TODO: Read query string parameters.
 // Relevant parameters:
@@ -64,6 +80,11 @@
 //   - search        (string) : free-text filter for GET requests
 //   - sort          (string) : field name to sort by
 //   - order         (string) : 'asc' or 'desc'
+$id     = $_GET['id'] ?? null;
+$action = $_GET['action'] ?? null;
+$search = $_GET['search'] ?? null;
+$sort   = $_GET['sort'] ?? null;
+$order  = $_GET['order'] ?? null;
 
 
 /**
@@ -81,23 +102,52 @@
  *     to prevent SQL injection before interpolating it into the ORDER BY clause.
  *   - Validate the 'order' value; only accept 'asc' or 'desc'.
  */
-function getUsers($db) {
+function getUsers($db, $search, $sort, $order) {
     // TODO: Build a SELECT query for id, name, email, is_admin, created_at.
     //       Do NOT select the password column.
+    $allowedSort = ['name', 'id', 'email','is_admin'];
+    $allowedOrder = ['asc', 'desc'];
 
+    $sql = "SELECT id, name, email, is_admin, created_at FROM users";
+    $params = [];
     // TODO: If the 'search' query parameter is present, append a WHERE clause:
     //       WHERE name LIKE :search OR email LIKE :search
     //       Wrap the search term with '%' wildcards when binding.
+    if (!empty($search)) {
+    $sql .= " WHERE name LIKE :search OR email LIKE :search";
+    $params[':search'] = "%$search%";
+}
 
     // TODO: If the 'sort' query parameter is present and is one of the allowed
     //       fields (name, email, is_admin), append an ORDER BY clause.
     //       If 'order' is 'desc', use DESC; otherwise default to ASC.
+    if ($sort && in_array($sort, $allowedSort)) {
 
+    $order = strtolower($order);
+    $order = in_array($order, $allowedOrder) ? $order : 'asc';
+
+    $sql .= " ORDER BY $sort $order";
+
+    } else {
+        $sql .= " ORDER BY name ASC";
+    }
+
+
+    try{
     // TODO: Prepare the statement, bind any parameters, and execute.
-
+        $stmt = $db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+      $stmt->execute();
     // TODO: Fetch all rows as an associative array.
-
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // TODO: Call sendResponse() with the array and HTTP status 200.
+    sendResponse(['success' => true, 'data' => $users]);
+}catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+}
 }
 
 
@@ -112,13 +162,24 @@ function getUserById($db, $id) {
     // TODO: Prepare SELECT query: SELECT id, name, email, is_admin, created_at
     //       FROM users WHERE id = :id
     //       Do NOT select the password column.
+    $sql = "SELECT id, name, email,is_admin, created_at FROM users WHERE id = :id";
+    $stmt = $db->prepare($sql);
+
 
     // TODO: Bind :id and execute.
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    $stmt->execute();
 
     // TODO: Fetch one row.
+    $users = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // TODO: If no row is found, call sendResponse() with an error message and HTTP 404.
     //       If found, call sendResponse() with the row and HTTP 200.
+    if ($users) {
+        sendResponse(['success' => true, 'data' => $users]);
+    } else {
+        sendResponse(['success' => false, 'message' => 'User not found'], 404);
+    }
 }
 
 
@@ -135,28 +196,77 @@ function getUserById($db, $id) {
 function createUser($db, $data) {
     // TODO: Check that name, email, and password are all present and non-empty.
     //       If any are missing, call sendResponse() with HTTP 400.
+     if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
+        sendResponse(['success' => false, 'message' => 'Missing required fields'], 400);
+    }
 
     // TODO: Trim whitespace from name, email, and password.
     //       Validate email format with filter_var(FILTER_VALIDATE_EMAIL).
     //       If invalid, call sendResponse() with HTTP 400.
+    $name = trim($data['name']);
+    $email = trim($data['email']);
+    $password = trim($data['password']);
+
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        sendResponse(['success' => false, 'message' => 'Invalid email'], 400);
+    }
+
 
     // TODO: Validate that password is at least 8 characters.
     //       If not, call sendResponse() with HTTP 400.
 
+    if (strlen($password) < 8) {
+        sendResponse(['success' => false, 'message' => 'Password must be at least 8 characters'], 400);
+    }
+
     // TODO: Check whether the email already exists in the users table.
     //       If it does, call sendResponse() with an appropriate message and HTTP 409.
+    $stmt = $db->prepare("SELECT id FROM users WHERE email = :email");
+    $stmt->execute([':email' => $email]);
+
+    if ($stmt->fetch()) {
+        sendResponse(['success' => false, 'message' => 'Email already exists'], 409);
+    }
+    
 
     // TODO: Hash the password using password_hash($password, PASSWORD_DEFAULT).
 
+     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
     // TODO: Read is_admin from $data; default to 0 if not provided.
     //       Accept only the values 0 or 1.
+      $is_admin = isset($data['is_admin']) && $data['is_admin'] == 1 ? 1 : 0;
 
     // TODO: Prepare and execute an INSERT INTO users (name, email, password, is_admin)
     //       VALUES (:name, :email, :password, :is_admin).
+   try {
+        // أضفنا علامة الاقتباس الناقصة في نهاية سطر SQL
+        $sql = "INSERT INTO users (name, email, password, is_admin) VALUES (:name, :email, :password, :is_admin)";
+        $stmt = $db->prepare($sql);
+        
+        $success = $stmt->execute([
+            ':name'     => $name,
+            ':email'    => $email,
+            ':password' => $hashedPassword,
+            ':is_admin' => $is_admin
+        ]);
 
-    // TODO: If the insert succeeds, call sendResponse() with the new user's id and HTTP 201.
-    //       If it fails, call sendResponse() with HTTP 500.
+      // TODO: If the insert succeeds, call sendResponse() with the new user's id and HTTP 201.
+     //       If it fails, call sendResponse() with HTTP 500.
+
+   
+        if ($success) {
+            sendResponse([  'success' => true, 'data' => ['id' => $db->lastInsertId()]], 201);
+
+        } else {
+            sendResponse(['success' => false, 'message' => 'Insert failed'], 500);
+        }
+    } catch (PDOException $e) {
+        sendResponse(['success' => false, 'message' => 'Database error: ' . $e->getMessage()], 500);
+    }
 }
+        
 
 
 /**
