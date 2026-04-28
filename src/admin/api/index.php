@@ -26,7 +26,7 @@
  *
  * Response Format: JSON
  * All responses have the shape:
- *   { "success": true,  "data": ... }
+ *   { "success": true,  "data": ... }اق
  *   { "success": false, "message": "..." }
  */
 
@@ -62,7 +62,7 @@ require_once __DIR__ . '/../../db.php';
 
 
 // TODO: Get the PDO database connection by calling getDBConnection().
-$pdo = getDBConnection();
+$db= getDBConnection();
 
 // TODO: Read the HTTP request method from $_SERVER['REQUEST_METHOD'].
 $method = $_SERVER['REQUEST_METHOD'];
@@ -102,7 +102,7 @@ $order  = $_GET['order'] ?? null;
  *     to prevent SQL injection before interpolating it into the ORDER BY clause.
  *   - Validate the 'order' value; only accept 'asc' or 'desc'.
  */
-function getUsers($db, $search, $sort, $order) {
+function getUsers($db, $search = null, $sort = null, $order = 'asc') {
     // TODO: Build a SELECT query for id, name, email, is_admin, created_at.
     //       Do NOT select the password column.
     $allowedSort = ['name', 'id', 'email','is_admin'];
@@ -284,21 +284,98 @@ function createUser($db, $data) {
 function updateUser($db, $data) {
     // TODO: Check that id is present in $data.
     //       If not, call sendResponse() with HTTP 400.
+    if (empty($data['id'])) {
+        sendResponse(['success' => false, 'message' => 'ID is required'], 400);
+    }
+
+    $id =$data['id'];
+
 
     // TODO: Look up the user by id. If not found, call sendResponse() with HTTP 404.
+     $stmt = $db->prepare("SELECT id FROM users WHERE id = :id");
+    $stmt->execute([':id' => $id]);
+
+    if (!$stmt->fetch()) {
+        sendResponse(['success' => false, 'message' => 'User not found'], 404);
+    } 
 
     // TODO: Dynamically build the SET clause for only the fields provided
     //       (name, email, is_admin). Skip any field not present in $data.
-
+    // Check duplicate (exclude current user)
     // TODO: If email is being updated, check it is not already used by another user
     //       (exclude the current user's id from the duplicate check).
+     $fields = [];
+    $params = [':id' => $id];
+
+  
+    if (!empty($data['name'])) {
+        $fields[] = "name = :name";
+        $params[':name'] = trim($data['name']);
+    }
+
+    
+    if (!empty($data['email'])) {
+
+        $email = trim($data['email']);
+
+     
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            sendResponse(['success' => false, 'message' => 'Invalid email'], 400);
+        }
+
+       
+        $check = $db->prepare("SELECT id FROM users WHERE email = :email AND id != :id");
+        $check->execute([':email' => $email,':id' => $id ]);
+        
+        
+
+        if ($check->fetch()) {
+            sendResponse(['success' => false, 'message' => 'Email already exists'], 409);
+        }
+
+        $fields[] = "email = :email";
+        $params[':email'] = $email;
+    }
+
+    
+    if (isset($data['is_admin'])) {
+
+        if (!in_array($data['is_admin'], [0, 1], true)) {
+            sendResponse(['success' => false, 'message' => 'Invalid is_admin value'], 400);
+        }
+
+        $fields[] = "is_admin = :is_admin";
+        $params[':is_admin'] = (int)$data['is_admin'];
+    }
+
+
+
+
     //       If a duplicate is found, call sendResponse() with HTTP 409.
+     if (empty($fields)) {
+        sendResponse(['success' => true, 'message' => 'No changes provided'], 200);
+    }
 
     // TODO: Prepare the UPDATE statement, bind parameters, and execute.
+     $sql = "UPDATE users SET " . implode(", ", $fields) . " WHERE id = :id";
+
 
     // TODO: If successful, call sendResponse() with a success message and HTTP 200.
     //       If no rows were affected, still return HTTP 200 (no change is not an error).
     //       If the query fails, call sendResponse() with HTTP 500.
+    try {
+        $stmt = $db->prepare($sql);
+        $success = $stmt->execute($params);
+
+        if ($success) {
+            sendResponse(['success' => true, 'message' => 'User updated'], 200);
+        } else {
+            sendResponse(['success' => false, 'message' => 'Update failed'], 500);
+        }
+
+    } catch (PDOException $e) {
+        sendResponse(['success' => false, 'message' => 'Database error'], 500);
+    }
 }
 
 
@@ -312,14 +389,31 @@ function updateUser($db, $data) {
 function deleteUser($db, $id) {
     // TODO: Check that $id is present and non-zero.
     //       If not, call sendResponse() with HTTP 400.
+    if (empty($id)) {
+        sendResponse(['success' => false, 'message' => 'ID is required'], 400);
+    }
+     $id =$id;
 
     // TODO: Check that a user with this id exists.
     //       If not, call sendResponse() with HTTP 404.
-
+    $check = $db->prepare("SELECT id FROM users WHERE id = :id");
+    $check->execute([':id' => $id]);
+     if (!$check->fetch()) {
+        sendResponse(['success' => false, 'message' => 'User not found'], 404);
+    }
     // TODO: Prepare and execute: DELETE FROM users WHERE id = :id
-
     // TODO: If successful, call sendResponse() with a success message and HTTP 200.
     //       If the query fails, call sendResponse() with HTTP 500.
+    try {
+        $stmt = $db->prepare("DELETE FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+
+        sendResponse(['success' => true, 'message' => 'User deleted'], 200);
+
+    } catch (PDOException $e) {
+        sendResponse(['success' => false, 'message' => 'Database error'], 500);
+    }
+
 }
 
 
@@ -335,22 +429,56 @@ function deleteUser($db, $id) {
 function changePassword($db, $data) {
     // TODO: Check that id, current_password, and new_password are all present.
     //       If any are missing, call sendResponse() with HTTP 400.
+    $id = $data['id'] ?? null;
+    $currentPassword = $data['current_password'] ?? '';
+    $newPassword = $data['new_password'] ?? '';
+
+    if (!$id || empty($currentPassword) || empty($newPassword)) {
+        sendResponse(['success' => false, 'message' => 'Missing required fields'], 400);
+    }
 
     // TODO: Validate that new_password is at least 8 characters.
     //       If not, call sendResponse() with HTTP 400.
+    if (strlen($newPassword) < 8) {
+        sendResponse(['success' => false, 'message' => 'New password must be at least 8 characters long'], 400);
+    }
 
     // TODO: SELECT password FROM users WHERE id = :id to retrieve the current hash.
     //       If no user is found, call sendResponse() with HTTP 404.
+    try {
+        $stmt = $db->prepare("SELECT password FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            sendResponse(['success' => false, 'message' => 'User not found'], 404);
+        }
 
     // TODO: Call password_verify($current_password, $hash).
     //       If verification fails, call sendResponse() with HTTP 401 (Unauthorized).
+    if (!password_verify($currentPassword, $user['password'])) {
+            sendResponse(['success' => false, 'message' => 'Incorrect current password'], 401);
+        }
 
     // TODO: Hash the new password: password_hash($new_password, PASSWORD_DEFAULT).
+    $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
     // TODO: Prepare and execute: UPDATE users SET password = :password WHERE id = :id
+    $updateStmt = $db->prepare("UPDATE users SET password = :password WHERE id = :id");
+        $success = $updateStmt->execute([':password' => $hashedNewPassword,':id'=> $id]);
+      
 
     // TODO: If successful, call sendResponse() with a success message and HTTP 200.
     //       If the query fails, call sendResponse() with HTTP 500.
+    if ($success) {
+            sendResponse(['success' => true, 'message' => 'Password updated successfully'], 200);
+        } else {
+            sendResponse(['success' => false, 'message' => 'Update failed'], 500);
+        }
+
+    } catch (PDOException $e) {
+        sendResponse(['success' => false, 'message' => 'Database error'], 500);
+    }
 }
 
 
@@ -363,30 +491,54 @@ try {
     if ($method === 'GET') {
         // TODO: If the 'id' query parameter is present and non-empty, call getUserById($db, $id).
         // TODO: Otherwise, call getUsers($db) (supports optional search/sort parameters).
+        if (!empty($id)) {
+            getUserById($db, $id);
+        } else {
+             getUsers($db, $search, $sort, $order);
+        }
+
 
     } elseif ($method === 'POST') {
         // TODO: If the 'action' query parameter equals 'change_password', call changePassword($db, $data).
         // TODO: Otherwise, call createUser($db, $data).
+        if ($action === 'change_password') {
+            changePassword($db, $data);
+        } else {
+            createUser($db, $data);
+        }
+
 
     } elseif ($method === 'PUT') {
         // TODO: Call updateUser($db, $data).
         //       The user id to update comes from the JSON body, not the query string.
+        updateUser($db, $data);
 
     } elseif ($method === 'DELETE') {
         // TODO: Read the 'id' query parameter.
         // TODO: Call deleteUser($db, $id).
+        if(empty($id)) {
+            sendResponse(['success' => false, 'message' => 'ID is required'], 400);
+        }
+
+        deleteUser($db, $id);
 
     } else {
         // TODO: Return HTTP 405 (Method Not Allowed) with a JSON error message.
+        sendResponse(['success' => false, 'message' => 'Method Not Allowed'], 405);
     }
 
 } catch (PDOException $e) {
     // TODO: Log the error (e.g. error_log($e->getMessage())).
     // TODO: Call sendResponse() with a generic "Database error" message and HTTP 500.
     //       Do NOT expose the raw exception message to the client.
+    error_log($e->getMessage());
+    sendResponse(['success' => false, 'message' => 'Database error'], 500);
+
 
 } catch (Exception $e) {
     // TODO: Call sendResponse() with the exception message and HTTP 500.
+
+    sendResponse(['success' => false, 'message' => $e->getMessage()], 500);
 }
 
 
@@ -403,16 +555,22 @@ try {
  * @param int   $statusCode HTTP status code (default 200).
  */
 function sendResponse($data, $statusCode = 200) {
-    // TODO: Call http_response_code($statusCode).
+http_response_code($statusCode);
 
-    // TODO: If $statusCode indicates success (< 400), echo:
-    //         json_encode(['success' => true, 'data' => $data])
-    //       Otherwise echo:
-    //         json_encode(['success' => false, 'message' => $data])
-
-    // TODO: Call exit to stop further execution.
+    // إذا كانت البيانات تحتوي بالفعل على مفتاح 'success'، نرسلها كما هي
+    // هذا يمنع التكرار الذي تسبب في الخطأ (Nested JSON)
+    if (is_array($data) && isset($data['success'])) {
+        echo json_encode($data);
+    } else {
+        // إذا كانت بيانات خام، نغلفها بالتنسيق المطلوب
+        if ($statusCode < 400) { 
+            echo json_encode(['success' => true, 'data' => $data]);
+        } else {
+            echo json_encode(['success' => false, 'message' => $data]);
+        }
+    }
+    exit();
 }
-
 
 /**
  * Validates an email address.
@@ -422,6 +580,7 @@ function sendResponse($data, $statusCode = 200) {
  */
 function validateEmail($email) {
     // TODO: return (bool) filter_var($email, FILTER_VALIDATE_EMAIL);
+    return (bool) filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
 
@@ -437,6 +596,10 @@ function sanitizeInput($data) {
     // TODO: strip_tags(...)
     // TODO: htmlspecialchars(..., ENT_QUOTES, 'UTF-8')
     // TODO: Return the sanitized value.
+    $data = trim($data);
+    $data = strip_tags($data);
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return $data;
 }
 
 ?>
