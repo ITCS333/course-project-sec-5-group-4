@@ -186,7 +186,7 @@ async function handleAddReply(event) {
     return;
   }
 
-  const response = await fetch("./api/index.php?action=reply", {
+  const response = await fetch('./api/index.php?action=reply', {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -194,7 +194,7 @@ async function handleAddReply(event) {
     body: JSON.stringify({
       topic_id: parseInt(currentTopicId, 10),
       author: "Student",
-      text: replyText,
+      text: replyText
     })
   });
 
