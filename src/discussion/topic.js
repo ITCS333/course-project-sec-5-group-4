@@ -113,11 +113,11 @@ function renderOriginalPost(topic) {
 function createReplyArticle(reply) {
   // ... your implementation here ...
 
-  repArticle=document.createElement('article');
-  repP=document.createElement('p');
-  repFooter=document.createElement('footer');
-  repDiv=document.createElement('div');
-  repButton=document.createElement('button');
+  const repArticle=document.createElement('article');
+  const repP=document.createElement('p');
+  const repFooter=document.createElement('footer');
+  const repDiv=document.createElement('div');
+  const repButton=document.createElement('button');
 
   repP.textContent=reply.text;
   
@@ -232,7 +232,7 @@ async function handleReplyListClick(event) {
     const result = await response.json();
 
     if(result.success === true){
-      currentReplies=currentReplies.filter(reply=> String(reply.id)!=String(intId));
+      currentReplies=currentReplies.filter(reply=> String(reply.id)!==String(intId));
       renderReplies();
     }
   }
