@@ -192,7 +192,7 @@ async function handleAddReply(event) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      topic_id: currentTopicId,
+      topic_id: parseInt(currentTopicId, 10),
       author: "Student",
       text: replyText,
     })
