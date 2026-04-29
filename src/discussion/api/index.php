@@ -140,7 +140,7 @@ function getAllTopics(PDO $db): void
 
     if(!empty($_GET['search'])){
         $query= $query.' WHERE subject LIKE :search OR message LIKE :search OR author LIKE :search';
-        $parameters['search'] = '%' . trim($_GET['search']) . '%';;
+        $parameters['search'] = '%' . trim($_GET['search']) . '%';
     }
 
     // TODO: Validate $_GET['sort'] against the whitelist
@@ -159,7 +159,7 @@ function getAllTopics(PDO $db): void
 
     $order = strtolower($_GET['order'] ?? 'desc');
     if(!in_array($order,['asc','desc'],true)){
-        $sort ='desc';
+        $order ='desc';
     }
 
     // TODO: Append ORDER BY {sort} {order} to the query.
@@ -203,7 +203,7 @@ function getTopicById(PDO $db, $id): void
 
     $row=$stmt->fetch(PDO::FETCH_ASSOC);
 
-    if(!$row){
+    if($row){
         sendResponse(['success' => true, 'data' => $row]);
     }else{
         sendResponse(['success' => false, 'message' => 'Topic not found.'], 404);
@@ -285,7 +285,7 @@ function updateTopic(PDO $db, array $data): void
     // TODO: Check that a topic with this id exists.
     // If not, sendResponse HTTP 404.
     $stmt=$db->prepare('SELECT * FROM topics WHERE id = ?');
-    $stmt->execute($data['id']);
+    $stmt->execute([$data['id']]);
 
     if(!$stmt->fetch(PDO::FETCH_ASSOC)){
         sendResponse(['success' => false, 'message' => 'Topic not present.'], 404);
@@ -469,7 +469,7 @@ function createReply(PDO $db, array $data): void
 
         $row=$stmt->fetch(PDO::FETCH_ASSOC);
 
-        sendResponse(['success' => true, 'message' => 'reply created.','id'=>$lastId,'data'=>$row], 404);
+        sendResponse(['success' => true, 'message' => 'reply created.','id'=>$lastId,'data'=>$row], 201);
 
     }else{
       sendResponse(['success' => false, 'message' => 'reply creation failed.'], 500);  
@@ -571,7 +571,7 @@ try {
          // ?id={id} → delete a topic (and its replies via CASCADE)
          // TODO: else call deleteTopic($db, $id)
         }else{
-            deleteTopic($db, $id)   
+            deleteTopic($db, $id);   
         }
     } else {
         // TODO: sendResponse HTTP 405 Method Not Allowed.
