@@ -16,12 +16,16 @@
 // the HTML document is parsed before this script runs.
 
 // TODO: Select the login form by its id "login-form".
+const loginForm = document.getElementById("login-form");
 
 // TODO: Select the email input element by its ID.
+const emailInput = document.getElementById("email");
 
 // TODO: Select the password input element by its ID.
+const passwordInput = document.getElementById("password");
 
 // TODO: Select the message container element by its ID.
+const messageContainer = document.getElementById("message-container");
 
 // --- Functions ---
 
@@ -38,6 +42,9 @@
  */
 function displayMessage(message, type) {
   // ... your implementation here ...
+  messageContainer.textContent = message;
+  messageContainer.className = type;
+
 }
 
 /**
@@ -54,6 +61,9 @@ function displayMessage(message, type) {
  */
 function isValidEmail(email) {
   // ... your implementation here ...
+  const emailRegEx = /\S+@\S+\.\S+/ ;
+  return emailRegEx.test(email);
+
 }
 
 /**
@@ -68,6 +78,7 @@ function isValidEmail(email) {
  */
 function isValidPassword(password) {
   // ... your implementation here ...
+  return password.length >= 8 ;
 }
 
 /**
@@ -84,8 +95,50 @@ function isValidPassword(password) {
  * - Call `displayMessage("Login successful!", "success")`.
  * - (Optional) Clear the email and password input fields.
  */
-function handleLogin(event) {
+ async function handleLogin(event) {
   // ... your implementation here ...
+    event.preventDefault();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+      if (!isValidEmail(email)) {
+        displayMessage("Invalid email format.", "error");
+        return;
+      }
+
+      if (!isValidPassword(password)) {
+          displayMessage("Password must be at least 8 characters.", "error");
+          return;
+      }
+
+      try {
+    const response = await fetch("api/index.php?action=login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      displayMessage("Login successful!", "success");
+
+      emailInput.value = "";
+      passwordInput.value = "";
+
+   window.location.href = "../admin/manage_users.html";
+
+    } else {
+      displayMessage(data.message || "Login failed", "error");
+    }
+
+  } catch (error) {
+    console.error(error);
+    displayMessage("Server error. Try again.", "error");
+  }
 }
 
 /**
@@ -98,8 +151,13 @@ function handleLogin(event) {
  */
 function setupLoginForm() {
   // ... your implementation here ...
+if (loginForm) {
+    console.log("Login form found");
+    loginForm.addEventListener("submit", handleLogin);
+  } else {
+    console.log("login form NOT found");
+  }
 }
-
 // --- Initial Page Load ---
 // Call the main setup function to attach the event listener.
 setupLoginForm();
