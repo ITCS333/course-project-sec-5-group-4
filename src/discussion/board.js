@@ -63,13 +63,13 @@ const topicListContainer=document.querySelector('#topic-list-container');
 function createTopicArticle(topic) {
   // ... your implementation here ...
 
-  tArticle=document.createElement('article');
-  tH=document.createElement('h3');
-  tA=document.createElement('a');
-  tFooter=document.createElement('footer');
-  tDiv=document.createElement('div');
-  tbutton1=document.createElement('button');
-  tbutton2=document.createElement('button');
+  const tArticle=document.createElement('article');
+  const tH=document.createElement('h3');
+  const tA=document.createElement('a');
+  const tFooter=document.createElement('footer');
+  const tDiv=document.createElement('div');
+  const tbutton1=document.createElement('button');
+  const tbutton2=document.createElement('button');
 
   tA.textContent=topic.subject;
   tA.href=`topic.html?id=${topic.id}`;
@@ -249,12 +249,12 @@ async function handleTopicListClick(event) {
     const result = await response.json();
 
     if(result.success === true){
-      topics=topics.filter(topic=> String(topic.id)!= String(id));
+      topics=topics.filter(topic=> String(topic.id)!== String(id));
       renderTopics();
     }
     
   }
-  if(event.target.classList.conatains('edit-btn')){
+  if(event.target.classList.contains('edit-btn')){
     const id=event.target.dataset.id;
 
     const topic = topics.find(topic=> String(topic.id)== String(id));
