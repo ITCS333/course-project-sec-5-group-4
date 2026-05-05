@@ -1,145 +1,206 @@
 
+let weeklyCourses = [];
 
-let weeklyData = [];
+// --- DOM Elements ---
+const courseForm = document.querySelector('#week-form');
+const tableBody = document.querySelector('#weeks-tbody');
+const submitButton = document.querySelector('#add-week');
 
-const weekForm = document.getElementById('week-form');
-const weeksBody = document.getElementById('weeks-tbody');
+// --- Helper: Build Table Row ---
+function buildCourseRow(course) {
+    const newRow = document.createElement('tr');
 
-function buildWeekRow(week) {
-  const row = document.createElement('tr');
-  
-  const titleCell = document.createElement('td');
-  titleCell.textContent = week.title;
-  
-  const dateCell = document.createElement('td');
-  dateCell.textContent = week.start_date;
-  
-  const descCell = document.createElement('td');
-  descCell.textContent = week.description || '';
-  
-  const actionsCell = document.createElement('td');
-  
-  const editButton = document.createElement('button');
-  editButton.className = 'edit-btn';
-  editButton.dataset.id = week.id;
-  editButton.textContent = 'Edit';
-  
-  const deleteButton = document.createElement('button');
-  deleteButton.className = 'delete-btn';
-  deleteButton.dataset.id = week.id;
-  deleteButton.textContent = 'Delete';
-  
-  actionsCell.appendChild(editButton);
-  actionsCell.appendChild(deleteButton);
-  
-  row.appendChild(titleCell);
-  row.appendChild(dateCell);
-  row.appendChild(descCell);
-  row.appendChild(actionsCell);
-  
-  return row;
+    // Course title column
+    const titleColumn = document.createElement('td');
+    titleColumn.innerText = course.title;
+    newRow.appendChild(titleColumn);
+
+    // Start date column
+    const dateColumn = document.createElement('td');
+    dateColumn.innerText = course.start_date;
+    newRow.appendChild(dateColumn);
+
+    // Description column
+    const descColumn = document.createElement('td');
+    descColumn.innerText = course.description;
+    newRow.appendChild(descColumn);
+
+    // Actions column with buttons
+    const actionColumn = document.createElement('td');
+
+    const editButton = document.createElement('button');
+    editButton.innerText = 'Edit';
+    editButton.className = 'edit-btn btn btn-sm btn-warning me-2';
+    editButton.setAttribute('data-id', course.id);
+    
+    const deleteButton = document.createElement('button');
+    deleteButton.innerText = 'Delete';
+    deleteButton.className = 'delete-btn btn btn-sm btn-danger';
+    deleteButton.setAttribute('data-id', course.id);
+
+    actionColumn.appendChild(editButton);
+    actionColumn.appendChild(deleteButton);
+    newRow.appendChild(actionColumn);
+
+    return newRow;
 }
 
-function displayWeeklyTable() {
-  if (!weeksBody) return;
-  weeksBody.innerHTML = '';
-  weeklyData.forEach(week => {
-    weeksBody.appendChild(buildWeekRow(week));
-  });
-}
-
-async function saveNewWeek(event) {
-  event.preventDefault();
-  
-  const title = document.getElementById('week-title').value;
-  const startDate = document.getElementById('week-start-date').value;
-  const description = document.getElementById('week-description').value;
-  const linksText = document.getElementById('week-links').value;
-  const links = linksText.split('\n').map(l => l.trim()).filter(l => l !== '');
-  
-  const submitBtn = document.getElementById('add-week');
-  
-  if (submitBtn.dataset.editId) {
-    const id = Number(submitBtn.dataset.editId);
-    await modifyWeek(id, { title, start_date: startDate, description, links });
-  } else {
-    const response = await fetch('./api/index.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, start_date: startDate, description, links })
+// --- Render All Rows ---
+function displayAllRows() {
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+    weeklyCourses.forEach(course => {
+        tableBody.appendChild(buildCourseRow(course));
     });
-    const result = await response.json();
-    
-    if (result.success) {
-      weeklyData.push({ id: result.id, title, start_date: startDate, description, links });
-      displayWeeklyTable();
-      weekForm.reset();
+}
+
+// --- Create New Course ---
+async function insertNewCourse(event) {
+    event.preventDefault();
+
+    const courseTitle = document.querySelector('#week-title').value.trim();
+    const startingDate = document.querySelector('#week-start-date').value;
+    const courseDesc = document.querySelector('#week-description').value.trim();
+    const resourceLinks = document.querySelector('#week-links').value
+        .split('\n')
+        .map(item => item.trim())
+        .filter(item => item !== '');
+
+    const existingEditId = submitButton.dataset.editId;
+
+    if (existingEditId) {
+        await modifyExistingCourse(parseInt(existingEditId), {
+            title: courseTitle,
+            start_date: startingDate,
+            description: courseDesc,
+            links: resourceLinks
+        });
+        return;
     }
-  }
-}
 
-async function modifyWeek(id, fields) {
-  const response = await fetch('./api/index.php', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, ...fields })
-  });
-  const result = await response.json();
-  
-  if (result.success) {
-    const index = weeklyData.findIndex(w => w.id === id);
-    if (index !== -1) weeklyData[index] = { id, ...fields };
-    displayWeeklyTable();
-    weekForm.reset();
-    
-    const submitBtn = document.getElementById('add-week');
-    submitBtn.textContent = 'Add Week';
-    delete submitBtn.dataset.editId;
-  }
-}
-
-async function handleTableActions(event) {
-  const target = event.target;
-  
-  if (target.classList.contains('delete-btn')) {
-    const id = Number(target.dataset.id);
-    const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
-    const result = await response.json();
-    
-    if (result.success) {
-      weeklyData = weeklyData.filter(w => w.id !== id);
-      displayWeeklyTable();
+    try {
+        const apiResponse = await fetch('./api/index.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: courseTitle,
+                start_date: startingDate,
+                description: courseDesc,
+                links: resourceLinks
+            })
+        });
+        
+        const responseData = await apiResponse.json();
+        
+        if (responseData.success) {
+            weeklyCourses.push({
+                id: responseData.id,
+                title: courseTitle,
+                start_date: startingDate,
+                description: courseDesc,
+                links: resourceLinks
+            });
+            displayAllRows();
+            courseForm.reset();
+        } else {
+            alert('Unable to add course. Please try again.');
+        }
+    } catch (error) {
+        console.error('Insert operation failed:', error);
+        alert('Network error occurred.');
     }
-  }
-  
-  if (target.classList.contains('edit-btn')) {
-    const id = Number(target.dataset.id);
-    const week = weeklyData.find(w => w.id === id);
-    if (!week) return;
-    
-    document.getElementById('week-title').value = week.title;
-    document.getElementById('week-start-date').value = week.start_date;
-    document.getElementById('week-description').value = week.description || '';
-    document.getElementById('week-links').value = (week.links || []).join('\n');
-    
-    const submitBtn = document.getElementById('add-week');
-    submitBtn.textContent = 'Update Week';
-    submitBtn.dataset.editId = week.id;
-  }
 }
 
-async function fetchAndInitialize() {
-  const response = await fetch('./api/index.php');
-  const result = await response.json();
-  
-  weeklyData = result.data || [];
-  displayWeeklyTable();
-  
-  if (weekForm) weekForm.addEventListener('submit', saveNewWeek);
-  if (weeksBody) weeksBody.addEventListener('click', handleTableActions);
+// --- Update Existing Course ---
+async function modifyExistingCourse(courseId, updatedData) {
+    try {
+        const apiResponse = await fetch('./api/index.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: courseId, ...updatedData })
+        });
+        
+        const responseData = await apiResponse.json();
+        
+        if (responseData.success) {
+            const targetIndex = weeklyCourses.findIndex(item => item.id === courseId);
+            if (targetIndex !== -1) {
+                weeklyCourses[targetIndex] = { id: courseId, ...updatedData };
+            }
+            displayAllRows();
+            courseForm.reset();
+            submitButton.innerText = 'Add Week';
+            delete submitButton.dataset.editId;
+        } else {
+            alert('Update failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Update operation failed:', error);
+        alert('Network error occurred.');
+    }
 }
 
-fetchAndInitialize();
+// --- Handle Edit / Delete Actions ---
+async function processTableActions(event) {
+    const clickedElement = event.target;
+    const recordId = parseInt(clickedElement.dataset.id);
+
+    if (clickedElement.classList.contains('delete-btn')) {
+        const userConfirmed = confirm('Delete this week? This action cannot be undone.');
+        if (!userConfirmed) return;
+        
+        try {
+            const apiResponse = await fetch(`./api/index.php?id=${recordId}`, { method: 'DELETE' });
+            const responseData = await apiResponse.json();
+            
+            if (responseData.success) {
+                weeklyCourses = weeklyCourses.filter(item => item.id !== recordId);
+                displayAllRows();
+            } else {
+                alert('Deletion failed.');
+            }
+        } catch (error) {
+            console.error('Delete operation failed:', error);
+            alert('Network error occurred.');
+        }
+    } 
+    else if (clickedElement.classList.contains('edit-btn')) {
+        const targetCourse = weeklyCourses.find(item => item.id === recordId);
+        if (!targetCourse) return;
+
+        document.querySelector('#week-title').value = targetCourse.title;
+        document.querySelector('#week-start-date').value = targetCourse.start_date;
+        document.querySelector('#week-description').value = targetCourse.description;
+        document.querySelector('#week-links').value = targetCourse.links.join('\n');
+
+        submitButton.innerText = 'Update Week';
+        submitButton.dataset.editId = recordId;
+    }
+}
+
+// --- Initial Load ---
+async function startupInitialization() {
+    try {
+        const apiResponse = await fetch('./api/index.php');
+        const responseData = await apiResponse.json();
+        
+        if (responseData.success) {
+            weeklyCourses = responseData.data;
+            displayAllRows();
+        } else {
+            alert('Failed to load course data.');
+        }
+    } catch (error) {
+        console.error('Initialization failed:', error);
+        alert('Could not connect to server.');
+    }
+
+    courseForm.addEventListener('submit', insertNewCourse);
+    tableBody.addEventListener('click', processTableActions);
+}
+
+// --- Start Application ---
+startupInitialization();
 
 /*
   Requirement: Make the "Manage Weekly Breakdown" page interactive.
