@@ -77,7 +77,7 @@ async function loadWeeks() {
       weekListSection.appendChild(article);
     });
   } catch (error) {
-    console.error('Failed to load weeks:', error);
+    console.error('Failed to  load weeks:', error);
     weekListSection.innerHTML = '<p>Error loading course weeks. Please try again later.</p>';
   }
 }
