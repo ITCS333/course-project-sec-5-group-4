@@ -1,39 +1,34 @@
-
-
 <?php
 session_start();
-
 header('Content-Type: application/json');
+
+require_once __DIR__ . '/../../../db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
-        'success' => false
+        'success' => false,
+        'message' => 'Invalid request method'
     ]);
     exit;
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($data['email']) || !isset($data['password'])) {
-    echo json_encode([
-        'success' => false
-    ]);
-    exit;
-}
-
-$email = trim($data['email']);
-$password = $data['password'];
+$email = trim($data['email'] ?? '');
+$password = $data['password'] ?? '';
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode([
-        'success' => false
+        'success' => false,
+        'message' => 'Invalid email format'
     ]);
     exit;
 }
 
 if (strlen($password) < 8) {
     echo json_encode([
-        'success' => false
+        'success' => false,
+        'message' => 'Password must be at least 8 characters'
     ]);
     exit;
 }
@@ -41,21 +36,23 @@ if (strlen($password) < 8) {
 try {
     $db = getDBConnection();
 
-    $stmt = $db->prepare("SELECT id, name, email, password, is_admin FROM users  WHERE email = :email   ")
-
+    $stmt = $db->prepare("SELECT id, name, email, password, is_admin FROM users WHERE email = :email");
     $stmt->execute(['email' => $email]);
+
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$user) {
         echo json_encode([
-            'success' => false
+            'success' => false,
+            'message' => 'User not found'
         ]);
         exit;
     }
 
     if (!password_verify($password, $user['password'])) {
         echo json_encode([
-            'success' => false
+            'success' => false,
+            'message' => 'Incorrect password'
         ]);
         exit;
     }
@@ -68,21 +65,15 @@ try {
 
     echo json_encode([
         'success' => true,
-        'user' => [
-            'id' => $user['id'],
-            'name' => $user['name'],
-            'email' => $user['email'],
-            'is_admin' => $user['is_admin']
-        ]
+        'user' => $user
     ]);
-    exit;
 
 } catch (PDOException $e) {
     error_log($e->getMessage());
 
     echo json_encode([
-        'success' => false
+        'success' => false,
+        'message' => 'Database error'
     ]);
-    exit;
 }
 ?>

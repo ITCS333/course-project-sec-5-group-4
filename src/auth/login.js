@@ -113,7 +113,7 @@ function isValidPassword(password) {
       }
 
       try {
-    const response = await fetch("api/index.php?action=login", {
+    const response = await fetch("api/index.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
