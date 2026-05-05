@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // TODO: Include the database connection file.
 // Assume a function getDBConnection() is available that returns a PDO instance
 // configured for the 'course' database (see schema.sql).
-
+require_once __DIR__ . '/../../db.php';
 
 
 
@@ -114,10 +114,10 @@ function getUsers($db, $search = null, $sort = null, $order = 'asc') {
     //       WHERE name LIKE :search OR email LIKE :search
     //       Wrap the search term with '%' wildcards when binding.
     if (!empty($search)) {
-    $sql .= " WHERE name LIKE :search OR email LIKE :search";
-    $params[':search'] = "%$search%";
-}
-
+        $sql .= " WHERE name LIKE :search1 OR email LIKE :search2";
+        $params[':search1'] = "%$search%";
+        $params[':search2'] = "%$search%";
+        }
     // TODO: If the 'sort' query parameter is present and is one of the allowed
     //       fields (name, email, is_admin), append an ORDER BY clause.
     //       If 'order' is 'desc', use DESC; otherwise default to ASC.
