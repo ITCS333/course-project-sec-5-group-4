@@ -94,9 +94,13 @@ function handleChangePassword(event) {
   // ... your implementation here ...
   event.preventDefault();
 
-  const current_password = document.getElementById("current-password").value;
-  const new_password = document.getElementById("new-password").value;
-  const confirm_password = document.getElementById("confirm-password").value;
+  const current_password = document.getElementById("current-password");
+  const new_password = document.getElementById("new-password");
+  const confirm_password = document.getElementById("confirm-password");
+
+  const current_password = currentInput.value;
+  const new_password = newInput.value;
+  const confirm_password = confirmInput.value;
 
 
   if (new_password !== confirm_password) {
@@ -110,6 +114,9 @@ function handleChangePassword(event) {
   }
 
   const userId = loggedInUserId; 
+   currentInput.value = "";
+  newInput.value = "";
+  confirmInput.value = "";
 
   fetch('../api/index.php?action=change_password', {
     method: 'POST',
@@ -423,7 +430,7 @@ async function loadUsersAndInitialize() {
     users = result.data || [];
     renderTable(users);
 
-    if (!window.initialized) {
+    
 
       addUserForm.addEventListener("submit", handleAddUser);
       passwordForm.addEventListener("submit", handleChangePassword);
@@ -435,8 +442,8 @@ async function loadUsersAndInitialize() {
         th.addEventListener("click", handleSort);
       });
 
-      window.initialized = true;
-    }
+  
+    
 
   } catch (error) {
     console.error("Error:", error);
