@@ -1,144 +1,145 @@
- let weeks = [];
 
-const weekForm   = document.getElementById('week-form');
-const weeksTbody = document.getElementById('weeks-tbody');
 
-function createWeekRow(week) {
-  const tr = document.createElement('tr');
+let weeklyData = [];
 
-  const tdTitle = document.createElement('td');
-  tdTitle.textContent = week.title;
+const weekForm = document.getElementById('week-form');
+const weeksBody = document.getElementById('weeks-tbody');
 
-  const tdDate = document.createElement('td');
-  tdDate.textContent = week.start_date;
-
-  const tdDesc = document.createElement('td');
-  tdDesc.textContent = week.description;
-
-  const tdActions = document.createElement('td');
-
-  const editBtn = document.createElement('button');
-  editBtn.className   = 'edit-btn';
-  editBtn.dataset.id  = week.id;
-  editBtn.textContent = 'Edit';
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className   = 'delete-btn';
-  deleteBtn.dataset.id  = week.id;
-  deleteBtn.textContent = 'Delete';
-
-  tdActions.appendChild(editBtn);
-  tdActions.appendChild(deleteBtn);
-
-  tr.appendChild(tdTitle);
-  tr.appendChild(tdDate);
-  tr.appendChild(tdDesc);
-  tr.appendChild(tdActions);
-
-  return tr;
+function buildWeekRow(week) {
+  const row = document.createElement('tr');
+  
+  const titleCell = document.createElement('td');
+  titleCell.textContent = week.title;
+  
+  const dateCell = document.createElement('td');
+  dateCell.textContent = week.start_date;
+  
+  const descCell = document.createElement('td');
+  descCell.textContent = week.description || '';
+  
+  const actionsCell = document.createElement('td');
+  
+  const editButton = document.createElement('button');
+  editButton.className = 'edit-btn';
+  editButton.dataset.id = week.id;
+  editButton.textContent = 'Edit';
+  
+  const deleteButton = document.createElement('button');
+  deleteButton.className = 'delete-btn';
+  deleteButton.dataset.id = week.id;
+  deleteButton.textContent = 'Delete';
+  
+  actionsCell.appendChild(editButton);
+  actionsCell.appendChild(deleteButton);
+  
+  row.appendChild(titleCell);
+  row.appendChild(dateCell);
+  row.appendChild(descCell);
+  row.appendChild(actionsCell);
+  
+  return row;
 }
 
-function renderTable() {
-  weeksTbody.innerHTML = '';
-  weeks.forEach(week => {
-    weeksTbody.appendChild(createWeekRow(week));
+function displayWeeklyTable() {
+  if (!weeksBody) return;
+  weeksBody.innerHTML = '';
+  weeklyData.forEach(week => {
+    weeksBody.appendChild(buildWeekRow(week));
   });
 }
 
-async function handleAddWeek(event) {
+async function saveNewWeek(event) {
   event.preventDefault();
-
-  const title       = document.getElementById('week-title').value;
-  const start_date  = document.getElementById('week-start-date').value;
+  
+  const title = document.getElementById('week-title').value;
+  const startDate = document.getElementById('week-start-date').value;
   const description = document.getElementById('week-description').value;
-  const links       = document.getElementById('week-links').value
-                        .split('\n')
-                        .map(l => l.trim())
-                        .filter(l => l !== '');
-
-  const addBtn = document.getElementById('add-week');
-
-  if (addBtn.dataset.editId) {
-    const id = Number(addBtn.dataset.editId);
-    await handleUpdateWeek(id, { title, start_date, description, links });
+  const linksText = document.getElementById('week-links').value;
+  const links = linksText.split('\n').map(l => l.trim()).filter(l => l !== '');
+  
+  const submitBtn = document.getElementById('add-week');
+  
+  if (submitBtn.dataset.editId) {
+    const id = Number(submitBtn.dataset.editId);
+    await modifyWeek(id, { title, start_date: startDate, description, links });
   } else {
     const response = await fetch('./api/index.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, start_date, description, links })
+      body: JSON.stringify({ title, start_date: startDate, description, links })
     });
     const result = await response.json();
-
-    if (result.success === true) {
-      weeks.push({ id: result.id, title, start_date, description, links });
-      renderTable();
+    
+    if (result.success) {
+      weeklyData.push({ id: result.id, title, start_date: startDate, description, links });
+      displayWeeklyTable();
       weekForm.reset();
     }
   }
 }
 
-async function handleUpdateWeek(id, fields) {
+async function modifyWeek(id, fields) {
   const response = await fetch('./api/index.php', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id, ...fields })
   });
   const result = await response.json();
-
-  if (result.success === true) {
-    const index = weeks.findIndex(w => w.id === id);
-    if (index !== -1) weeks[index] = { id, ...fields };
-    renderTable();
+  
+  if (result.success) {
+    const index = weeklyData.findIndex(w => w.id === id);
+    if (index !== -1) weeklyData[index] = { id, ...fields };
+    displayWeeklyTable();
     weekForm.reset();
-
-    const addBtn = document.getElementById('add-week');
-    addBtn.textContent = 'Add Week';
-    delete addBtn.dataset.editId;
+    
+    const submitBtn = document.getElementById('add-week');
+    submitBtn.textContent = 'Add Week';
+    delete submitBtn.dataset.editId;
   }
 }
 
-async function handleTableClick(event) {
+async function handleTableActions(event) {
   const target = event.target;
-
+  
   if (target.classList.contains('delete-btn')) {
     const id = Number(target.dataset.id);
     const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
     const result = await response.json();
-
-    if (result.success === true) {
-      weeks = weeks.filter(w => w.id !== id);
-      renderTable();
+    
+    if (result.success) {
+      weeklyData = weeklyData.filter(w => w.id !== id);
+      displayWeeklyTable();
     }
   }
-
+  
   if (target.classList.contains('edit-btn')) {
-    const id   = Number(target.dataset.id);
-    const week = weeks.find(w => w.id === id);
+    const id = Number(target.dataset.id);
+    const week = weeklyData.find(w => w.id === id);
     if (!week) return;
-
-    document.getElementById('week-title').value       = week.title;
-    document.getElementById('week-start-date').value  = week.start_date;
-    document.getElementById('week-description').value = week.description;
-    document.getElementById('week-links').value       = (week.links || []).join('\n');
-
-    const addBtn = document.getElementById('add-week');
-    addBtn.textContent    = 'Update Week';
-    addBtn.dataset.editId = week.id;
+    
+    document.getElementById('week-title').value = week.title;
+    document.getElementById('week-start-date').value = week.start_date;
+    document.getElementById('week-description').value = week.description || '';
+    document.getElementById('week-links').value = (week.links || []).join('\n');
+    
+    const submitBtn = document.getElementById('add-week');
+    submitBtn.textContent = 'Update Week';
+    submitBtn.dataset.editId = week.id;
   }
 }
 
-async function loadAndInitialize() {
+async function fetchAndInitialize() {
   const response = await fetch('./api/index.php');
-  const result   = await response.json();
-
-  weeks = result.data || [];
-  renderTable();
-
-  weekForm.addEventListener('submit', handleAddWeek);
-  weeksTbody.addEventListener('click', handleTableClick);
+  const result = await response.json();
+  
+  weeklyData = result.data || [];
+  displayWeeklyTable();
+  
+  if (weekForm) weekForm.addEventListener('submit', saveNewWeek);
+  if (weeksBody) weeksBody.addEventListener('click', handleTableActions);
 }
 
-loadAndInitialize();
+fetchAndInitialize();
 
 /*
   Requirement: Make the "Manage Weekly Breakdown" page interactive.
