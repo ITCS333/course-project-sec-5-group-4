@@ -1,151 +1,4 @@
 
-
-let activeWeekId = null;
-let commentsArray = [];
-
-
-const titleElement = document.querySelector('#week-title');
-const dateElement = document.querySelector('#week-start-date');
-const descElement = document.querySelector('#week-description');
-const resourcesList = document.querySelector('#week-links-list');
-const discussionArea = document.querySelector('#comment-list');
-const discussionForm = document.querySelector('#comment-form');
-const messageField = document.querySelector('#new-comment');
-
-
-function extractWeekIdFromUrl() {
-    const queryParams = new URLSearchParams(window.location.search);
-    return queryParams.get('id');
-}
-
-// --- Display Week Information ---
-function displayWeekContent(weekData) {
-    // Set basic information
-    titleElement.textContent = weekData.title;
-    dateElement.textContent = `Starts on: ${weekData.start_date}`;
-    descElement.textContent = weekData.description || 'No description provided.';
-
-    // Build resources list
-    resourcesList.innerHTML = '';
-    
-    if (weekData.links && weekData.links.length > 0) {
-        weekData.links.forEach(linkUrl => {
-            const listItem = document.createElement('li');
-            listItem.className = 'list-group-item';
-            
-            const hyperlink = document.createElement('a');
-            hyperlink.href = linkUrl;
-            hyperlink.textContent = linkUrl;
-            hyperlink.target = '_blank';
-            hyperlink.rel = 'noopener noreferrer';
-            
-            listItem.appendChild(hyperlink);
-            resourcesList.appendChild(listItem);
-        });
-    }
-}
-
-// --- Build Comment Component ---
-function generateCommentComponent(commentData) {
-    const container = document.createElement('article');
-    container.className = 'border p-3 mb-2 rounded';
-    
-    const messageParagraph = document.createElement('p');
-    messageParagraph.textContent = commentData.text;
-    
-    const metaFooter = document.createElement('footer');
-    metaFooter.textContent = `Posted by: ${commentData.author}`;
-    
-    container.appendChild(messageParagraph);
-    container.appendChild(metaFooter);
-    
-    return container;
-}
-
-// --- Refresh Comments Section ---
-function refreshCommentsDisplay() {
-    discussionArea.innerHTML = '';
-    
-    commentsArray.forEach(singleComment => {
-        discussionArea.appendChild(generateCommentComponent(singleComment));
-    });
-}
-
-async function submitNewComment(formEvent) {
-    formEvent.preventDefault();
-    
-    const userMessage = messageField.value.trim();
-    if (!userMessage) return;
-    
-    try {
-        const serverResponse = await fetch('./api/index.php?action=comment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                week_id: parseInt(activeWeekId),
-                author: 'Student',
-                text: userMessage
-            })
-        });
-        
-        const operationResult = await serverResponse.json();
-        
-        if (operationResult.success) {
-            commentsArray.push(operationResult.data);
-            refreshCommentsDisplay();
-            messageField.value = '';
-        } else {
-            console.warn('Comment submission failed');
-        }
-    } catch (networkError) {
-        console.error('Network error while posting comment:', networkError);
-    }
-}
-
-// --- Load All Page Data ---
-async function loadPageData() {
-    activeWeekId = extractWeekIdFromUrl();
-    
-    if (!activeWeekId) {
-        titleElement.textContent = 'Week not found.';
-        return;
-    }
-    
-    try {
-        // Fetch week details and comments simultaneously
-        const [weekResponse, commentsResponse] = await Promise.all([
-            fetch(`./api/index.php?id=${activeWeekId}`),
-            fetch(`./api/index.php?action=comments&week_id=${activeWeekId}`)
-        ]);
-        
-        const weekResult = await weekResponse.json();
-        const commentsResult = await commentsResponse.json();
-        
-        // Handle week data
-        if (weekResult.success && weekResult.data) {
-            displayWeekContent(weekResult.data);
-        } else {
-            titleElement.textContent = 'Week not found.';
-            return;
-        }
-        
-        // Handle comments data
-        commentsArray = commentsResult.success ? commentsResult.data : [];
-        refreshCommentsDisplay();
-        
-        // Attach form event listener
-        if (discussionForm) {
-            discussionForm.addEventListener('submit', submitNewComment);
-        }
-        
-    } catch (loadError) {
-        console.error('Failed to initialize page:', loadError);
-        titleElement.textContent = 'Error loading content.';
-    }
-}
-
-// --- Start Application ---
-loadPageData();
 /*
   Requirement: Populate the weekly detail page and handle the discussion forum.
 
@@ -194,6 +47,13 @@ let currentComments = [];
 // TODO: Select each element by its id:
 //   weekTitle, weekStartDate, weekDescription,
 //   weekLinksList, commentList, commentForm, newCommentInput.
+const weekTitle = document.getElementById('week-title');
+const weekStartDate = document.getElementById('week-start-date');
+const weekDescription = document.getElementById('week-description');
+const weekLinksList = document.getElementById('week-links-list');
+const commentList = document.getElementById('comment-list');
+const commentForm = document.getElementById('comment-form');
+const newCommentInput = document.getElementById('new-comment');
 
 // --- Functions ---
 
@@ -208,6 +68,8 @@ let currentComments = [];
  */
 function getWeekIdFromURL() {
   // ... your implementation here ...
+  const params = new URLSearchParams(window.location.search);
+    return params.get('id');
 }
 
 /**
@@ -228,6 +90,19 @@ function getWeekIdFromURL() {
  */
 function renderWeekDetails(week) {
   // ... your implementation here ...
+  weekTitle.textContent= week.title;
+  weekStartDate.textContent= 'Starts on: ' + week.start_date;
+  weekDescription.textContent = week.description;
+
+  weekLinksList.innerHTML = '';
+  week.links.forEach(url => {
+    const li = document.createElement('li');
+    const a  = document.createElement('a');
+    a.href        = url;
+    a.textContent = url;
+    li.appendChild(a);
+    weekLinksList.appendChild(li);
+  });
 }
 
 /**
@@ -245,6 +120,20 @@ function renderWeekDetails(week) {
  */
 function createCommentArticle(comment) {
   // ... your implementation here ...
+ 
+      const article = document.createElement('article');
+
+  const p = document.createElement('p');
+  p.textContent = comment.text;
+
+  const footer = document.createElement('footer');
+  footer.textContent = 'Posted by: ' + comment.author;
+
+  article.appendChild(p);
+  article.appendChild(footer);
+
+  return article;
+
 }
 
 /**
@@ -258,6 +147,11 @@ function createCommentArticle(comment) {
  */
 function renderComments() {
   // ... your implementation here ...
+  commentList.innerHTML = '';
+  currentComments.forEach(comment => {
+    const article = createCommentArticle(comment);
+    commentList.appendChild(article);
+  });
 }
 
 /**
@@ -283,6 +177,36 @@ function renderComments() {
  */
 async function handleAddComment(event) {
   // ... your implementation here ...
+   event.preventDefault();
+
+    const commentText = newCommentInput.value.trim();
+    if (!commentText) return;
+
+    try {
+        const response = await fetch('./api/index.php?action=comment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                week_id: parseInt(currentWeekId),
+                author: "Student",
+                text: commentText
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            currentComments.push(result.data);
+            renderComments();
+            newCommentInput.value = '';
+        } else {
+            alert('Failed to add comment');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error adding comment');
+    }
+ 
 }
 
 /**
@@ -311,6 +235,35 @@ async function handleAddComment(event) {
  */
 async function initializePage() {
   // ... your implementation here ...
+   currentWeekId = getWeekIdFromURL();
+
+  if (!currentWeekId) {
+    weekTitle.textContent = 'Week not found.';
+    return;
+  }
+
+  try {
+    const [weekRes, commentsRes] = await Promise.all([
+      fetch(`./api/index.php?id=${currentWeekId}`),
+      fetch(`./api/index.php?action=comments&week_id=${currentWeekId}`)
+    ]);
+
+    const weekJson     = await weekRes.json();
+    const commentsJson = await commentsRes.json();
+
+    currentComments = commentsJson.data ?? [];
+
+    if (weekJson.success && weekJson.data) {
+      renderWeekDetails(weekJson.data);
+      renderComments();
+      commentForm.addEventListener('submit', handleAddComment);
+    } else {
+      weekTitle.textContent = 'Week not found.';
+    }
+  } catch (error) {
+    console.error('Failed to initialize page:', error);
+    weekTitle.textContent = 'Week not found.';
+  }
 }
 
 // --- Initial Page Load ---
