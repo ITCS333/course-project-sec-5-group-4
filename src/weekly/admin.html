@@ -3,38 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Weekly Breakdown</title>
+    <title>Admin Dashboard</title>
     <script src="admin.js" defer></script>
 </head>
 <body>
+
+    <!-- TASK 2: RESOURCES -->
     <header>
-        <h1>Manage Weekly Breakdown</h1>
+        <h1>Manage Resources</h1>
     </header>
 
     <main>
+        <section>
+            <h2>Add a New Resource</h2>
+            <form id="resource-form" action="#">
+                <fieldset>
+                    <legend>Resource Details</legend>
+                    <label for="resource-title">Resource Title</label>
+                    <input type="text" id="resource-title" required>
+                    <label for="resource-description">Description</label>
+                    <textarea id="resource-description"></textarea>
+                    <label for="resource-link">Resource Link</label>
+                    <input type="url" id="resource-link" required>
+                    <button type="submit" id="add-resource">Add Resource</button>
+                </fieldset>
+            </form>
+        </section>
+
+        <section>
+            <h2>Current Resources</h2>
+            <table id="resources-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Link</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="resources-tbody"></tbody>
+            </table>
+        </section>
+
+        <!-- TASK 3: WEEKLY -->
+        <header>
+            <h1>Manage Weekly Breakdown</h1>
+        </header>
+
         <section>
             <h2>Add a New Week</h2>
             <form id="week-form" action="#">
                 <fieldset>
                     <legend>Weekly Details</legend>
-                    
                     <label for="week-title">Week Title</label>
                     <input type="text" id="week-title" required placeholder="Week 1: Introduction to HTML">
-                    
                     <label for="week-start-date">Start Date</label>
                     <input type="date" id="week-start-date" required>
-                    
-                    <label for="week-description">Description</label>
+                    <label for="week-description">Week Description</label>
                     <textarea id="week-description" rows="5"></textarea>
-                    
                     <label for="week-links">Resource Links (one URL per line)</label>
                     <textarea id="week-links" rows="3"></textarea>
-                    
                     <button type="submit" id="add-week">Add Week</button>
                 </fieldset>
             </form>
         </section>
-        
+
         <section>
             <h2>Current Weekly Breakdown</h2>
             <table id="weeks-table">
@@ -49,7 +82,53 @@
                 <tbody id="weeks-tbody"></tbody>
             </table>
         </section>
+
+        <!-- TASK 4: ASSIGNMENTS -->
+        <header>
+            <h1>Manage Assignments</h1>
+        </header>
+
+        <section>
+            <h2>Add a New Assignment</h2>
+            <form id="assignment-form" action="#">
+                <fieldset>
+                    <legend>Assignment Details</legend>
+                    <label for="assignment-title">Assignment Title</label>
+                    <input type="text" id="assignment-title" required>
+                    <label for="assignment-description">Description</label>
+                    <textarea id="assignment-description" rows="4" required></textarea>
+                    <label for="assignment-due-date">Due Date</label>
+                    <input type="date" id="assignment-due-date" required>
+                    <label for="assignment-max-grade">Maximum Grade</label>
+                    <input type="number" id="assignment-max-grade" required>
+                    <label for="assignment-status">Status</label>
+                    <select id="assignment-status">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                    <button type="submit" id="add-assignment">Add Assignment</button>
+                </fieldset>
+            </form>
+        </section>
+
+        <section>
+            <h2>Current Assignments</h2>
+            <table id="assignments-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Due Date</th>
+                        <th>Max Grade</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="assignments-tbody"></tbody>
+            </table>
+        </section>
     </main>
+
 </body>
 </html>
 
