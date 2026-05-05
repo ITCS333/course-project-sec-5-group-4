@@ -200,7 +200,7 @@ async function handleAddComment(event) {
             renderComments();
             newCommentInput.value = '';
         } else {
-            alert('Failed to add comment');
+            alert('Failed to  add comment');
         }
     } catch (err) {
         console.error(err);
