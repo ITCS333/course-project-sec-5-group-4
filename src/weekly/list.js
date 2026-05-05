@@ -1,3 +1,41 @@
+const weekListSection = document.getElementById('week-list-section');
+
+function createWeekArticle(week) {
+  const article = document.createElement('article');
+
+  const h2 = document.createElement('h2');
+  h2.textContent = week.title;
+
+  const pDate = document.createElement('p');
+  pDate.textContent = 'Starts on: ' + week.start_date;
+
+  const pDesc = document.createElement('p');
+  pDesc.textContent = week.description;
+
+  const a = document.createElement('a');
+  a.href        = 'details.html?id=' + week.id;
+  a.textContent = 'View Details & Discussion';
+
+  article.appendChild(h2);
+  article.appendChild(pDate);
+  article.appendChild(pDesc);
+  article.appendChild(a);
+
+  return article;
+}
+
+async function loadWeeks() {
+  const response = await fetch('./api/index.php');
+  const result   = await response.json();
+
+  weekListSection.innerHTML = '';
+  (result.data || []).forEach(week => {
+    weekListSection.appendChild(createWeekArticle(week));
+  });
+}
+
+loadWeeks();
+
 /*
   Requirement: Populate the "Weekly Course Breakdown" list page.
 
