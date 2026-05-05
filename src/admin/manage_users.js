@@ -111,6 +111,10 @@ function handleChangePassword(event) {
 
   const userId = loggedInUserId; 
 
+document.getElementById("current-password").value = "";
+document.getElementById("new-password").value = "";
+document.getElementById("confirm-password").value = "";
+
   fetch('../api/index.php?action=change_password', {
     method: 'POST',
     headers: {
@@ -406,12 +410,9 @@ function handleSort(event) {
  *    - "click"  on each th in tableHeaders -> handleSort
  */
 async function loadUsersAndInitialize() {
-  // ... your implementation here ...
   try {
-
     const response = await fetch('../api/index.php');
 
-    
     if (!response.ok) {
       console.error("Failed to fetch users:", response.status);
       alert("Failed to load users");
@@ -419,24 +420,16 @@ async function loadUsersAndInitialize() {
     }
 
     const result = await response.json();
-
     users = result.data || [];
     renderTable(users);
 
-    if (!window.initialized) {
-
-      addUserForm.addEventListener("submit", handleAddUser);
-      passwordForm.addEventListener("submit", handleChangePassword);
-
-      userTableBody.addEventListener("click", handleTableClick);
-      searchInput.addEventListener("input", handleSearch);
-
-      tableHeaders.forEach(th => {
-        th.addEventListener("click", handleSort);
-      });
-
-      window.initialized = true;
-    }
+    addUserForm.addEventListener("submit", handleAddUser, { once: true });
+    passwordForm.addEventListener("submit", handleChangePassword, { once: true });
+    userTableBody.addEventListener("click", handleTableClick, { once: true });
+    searchInput.addEventListener("input", handleSearch, { once: true });
+    tableHeaders.forEach(th => {
+      th.addEventListener("click", handleSort, { once: true });
+    });
 
   } catch (error) {
     console.error("Error:", error);
