@@ -1,63 +1,8 @@
-
-function createWeekArticle(week) {
-  const article = document.createElement('article');
-  
-  const title = document.createElement('h2');
-  title.textContent = week.title;
-  
-  const date = document.createElement('p');
-  date.textContent = `Starts on: ${week.start_date}`;
-  
-  const desc = document.createElement('p');
-  desc.textContent = week.description || '';
-  
-  const link = document.createElement('a');
-  link.href = `details.html?id=${week.id}`;
-  link.textContent = 'View Details & Discussion';
-  
-  article.appendChild(title);
-  article.appendChild(date);
-  article.appendChild(desc);
-  article.appendChild(link);
-  
-  return article;
-}
-
-async function loadWeeks() {
-  const container = document.getElementById('week-list-section');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  
-  const response = await fetch('./api/index.php');
-  const result = await response.json();
-  
-  if (result.success && result.data) {
-    result.data.forEach(week => {
-      container.appendChild(createWeekArticle(week));
-    });
-  }
-}
-
-loadWeeks();
-/*
-  Requirement: Populate the "Weekly Course Breakdown" list page.
-
-  Instructions:
-  1. This file is already linked to `list.html` via:
-         <script src="list.js" defer></script>
-
-  2. In `list.html`, the <section id="week-list-section"> is the container
-     that this script populates.
-
-  3. Implement the TODOs below.
-*/
-
 // --- Element Selections ---
 // TODO: Select the section for the week list using its id 'week-list-section'.
+const weekListSection = document.getElementById('week-list-section');
 
 // --- Functions ---
-
 /**
  * TODO: Implement createWeekArticle.
  *
@@ -84,7 +29,27 @@ loadWeeks();
  * the weeks table) so that details.js can read the id from the URL.
  */
 function createWeekArticle(week) {
-  // ... your implementation here ...
+  const article = document.createElement('article');
+
+  const title = document.createElement('h2');
+  title.textContent = week.title;
+
+  const startDate = document.createElement('p');
+  startDate.textContent = `Starts on: ${week.start_date}`;
+
+  const description = document.createElement('p');
+  description.textContent = week.description;
+
+  const link = document.createElement('a');
+  link.href = `details.html?id=${week.id}`;
+  link.textContent = 'View Details & Discussion';
+
+  article.appendChild(title);
+  article.appendChild(startDate);
+  article.appendChild(description);
+  article.appendChild(link);
+
+  return article;
 }
 
 /**
@@ -101,7 +66,20 @@ function createWeekArticle(week) {
  *    - Append the returned <article> to the list section.
  */
 async function loadWeeks() {
-  // ... your implementation here ...
+  try {
+    const response = await fetch('./api/index.php');
+    const json = await response.json();
+
+    weekListSection.innerHTML = '';
+
+    json.data.forEach(week => {
+      const article = createWeekArticle(week);
+      weekListSection.appendChild(article);
+    });
+  } catch (error) {
+    console.error('Failed to load weeks:', error);
+    weekListSection.innerHTML = '<p>Error loading course weeks. Please try again later.</p>';
+  }
 }
 
 // --- Initial Page Load ---
