@@ -1,118 +1,151 @@
 
-let currentWeekId = null;
 
-function getWeekIdFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get('id');
+let activeWeekId = null;
+let commentsArray = [];
+
+
+const titleElement = document.querySelector('#week-title');
+const dateElement = document.querySelector('#week-start-date');
+const descElement = document.querySelector('#week-description');
+const resourcesList = document.querySelector('#week-links-list');
+const discussionArea = document.querySelector('#comment-list');
+const discussionForm = document.querySelector('#comment-form');
+const messageField = document.querySelector('#new-comment');
+
+
+function extractWeekIdFromUrl() {
+    const queryParams = new URLSearchParams(window.location.search);
+    return queryParams.get('id');
 }
 
-function renderWeekDetails(week) {
-  const titleEl = document.getElementById('week-title');
-  const dateEl = document.getElementById('week-start-date');
-  const descEl = document.getElementById('week-description');
-  const linksList = document.getElementById('week-links-list');
-  
-  if (titleEl) titleEl.textContent = week.title;
-  if (dateEl) dateEl.textContent = `Starts on: ${week.start_date}`;
-  if (descEl) descEl.textContent = week.description || '';
-  
-  if (linksList && week.links) {
-    linksList.innerHTML = '';
-    week.links.forEach(link => {
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.href = link;
-      a.textContent = link;
-      a.target = '_blank';
-      li.appendChild(a);
-      linksList.appendChild(li);
+// --- Display Week Information ---
+function displayWeekContent(weekData) {
+    // Set basic information
+    titleElement.textContent = weekData.title;
+    dateElement.textContent = `Starts on: ${weekData.start_date}`;
+    descElement.textContent = weekData.description || 'No description provided.';
+
+    // Build resources list
+    resourcesList.innerHTML = '';
+    
+    if (weekData.links && weekData.links.length > 0) {
+        weekData.links.forEach(linkUrl => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            
+            const hyperlink = document.createElement('a');
+            hyperlink.href = linkUrl;
+            hyperlink.textContent = linkUrl;
+            hyperlink.target = '_blank';
+            hyperlink.rel = 'noopener noreferrer';
+            
+            listItem.appendChild(hyperlink);
+            resourcesList.appendChild(listItem);
+        });
+    }
+}
+
+// --- Build Comment Component ---
+function generateCommentComponent(commentData) {
+    const container = document.createElement('article');
+    container.className = 'border p-3 mb-2 rounded';
+    
+    const messageParagraph = document.createElement('p');
+    messageParagraph.textContent = commentData.text;
+    
+    const metaFooter = document.createElement('footer');
+    metaFooter.textContent = `Posted by: ${commentData.author}`;
+    
+    container.appendChild(messageParagraph);
+    container.appendChild(metaFooter);
+    
+    return container;
+}
+
+// --- Refresh Comments Section ---
+function refreshCommentsDisplay() {
+    discussionArea.innerHTML = '';
+    
+    commentsArray.forEach(singleComment => {
+        discussionArea.appendChild(generateCommentComponent(singleComment));
     });
-  }
 }
 
-function createCommentArticle(comment) {
-  const article = document.createElement('article');
-  
-  const text = document.createElement('p');
-  text.textContent = comment.text;
-  
-  const footer = document.createElement('footer');
-  footer.textContent = `Posted by: ${comment.author}`;
-  
-  article.appendChild(text);
-  article.appendChild(footer);
-  
-  return article;
+async function submitNewComment(formEvent) {
+    formEvent.preventDefault();
+    
+    const userMessage = messageField.value.trim();
+    if (!userMessage) return;
+    
+    try {
+        const serverResponse = await fetch('./api/index.php?action=comment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                week_id: parseInt(activeWeekId),
+                author: 'Student',
+                text: userMessage
+            })
+        });
+        
+        const operationResult = await serverResponse.json();
+        
+        if (operationResult.success) {
+            commentsArray.push(operationResult.data);
+            refreshCommentsDisplay();
+            messageField.value = '';
+        } else {
+            console.warn('Comment submission failed');
+        }
+    } catch (networkError) {
+        console.error('Network error while posting comment:', networkError);
+    }
 }
 
-function renderComments(comments) {
-  const container = document.getElementById('comment-list');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  comments.forEach(comment => {
-    container.appendChild(createCommentArticle(comment));
-  });
+// --- Load All Page Data ---
+async function loadPageData() {
+    activeWeekId = extractWeekIdFromUrl();
+    
+    if (!activeWeekId) {
+        titleElement.textContent = 'Week not found.';
+        return;
+    }
+    
+    try {
+        // Fetch week details and comments simultaneously
+        const [weekResponse, commentsResponse] = await Promise.all([
+            fetch(`./api/index.php?id=${activeWeekId}`),
+            fetch(`./api/index.php?action=comments&week_id=${activeWeekId}`)
+        ]);
+        
+        const weekResult = await weekResponse.json();
+        const commentsResult = await commentsResponse.json();
+        
+        // Handle week data
+        if (weekResult.success && weekResult.data) {
+            displayWeekContent(weekResult.data);
+        } else {
+            titleElement.textContent = 'Week not found.';
+            return;
+        }
+        
+        // Handle comments data
+        commentsArray = commentsResult.success ? commentsResult.data : [];
+        refreshCommentsDisplay();
+        
+        // Attach form event listener
+        if (discussionForm) {
+            discussionForm.addEventListener('submit', submitNewComment);
+        }
+        
+    } catch (loadError) {
+        console.error('Failed to initialize page:', loadError);
+        titleElement.textContent = 'Error loading content.';
+    }
 }
 
-async function handleAddComment(event) {
-  event.preventDefault();
-  
-  const textarea = document.getElementById('new-comment');
-  const commentText = textarea.value.trim();
-  
-  if (!commentText) return;
-  
-  const response = await fetch('./api/index.php?action=comment', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      week_id: currentWeekId,
-      author: 'Student',
-      text: commentText
-    })
-  });
-  
-  const result = await response.json();
-  
-  if (result.success) {
-    textarea.value = '';
-    await initializePage();
-  }
-}
-
-async function initializePage() {
-  currentWeekId = getWeekIdFromURL();
-  
-  if (!currentWeekId) {
-    const titleEl = document.getElementById('week-title');
-    if (titleEl) titleEl.textContent = 'Week not found.';
-    return;
-  }
-  
-  const [weekRes, commentsRes] = await Promise.all([
-    fetch(`./api/index.php?id=${currentWeekId}`),
-    fetch(`./api/index.php?action=comments&week_id=${currentWeekId}`)
-  ]);
-  
-  const weekData = await weekRes.json();
-  const commentsData = await commentsRes.json();
-  
-  if (weekData.success && weekData.data) {
-    renderWeekDetails(weekData.data);
-  }
-  
-  if (commentsData.success) {
-    renderComments(commentsData.data || []);
-  }
-  
-  const form = document.getElementById('comment-form');
-  if (form) {
-    form.addEventListener('submit', handleAddComment);
-  }
-}
-
-initializePage();
+// --- Start Application ---
+loadPageData();
 /*
   Requirement: Populate the weekly detail page and handle the discussion forum.
 
