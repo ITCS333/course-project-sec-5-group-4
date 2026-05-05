@@ -103,51 +103,34 @@ $order  = $_GET['order'] ?? null;
  *   - Validate the 'order' value; only accept 'asc' or 'desc'.
  */
 function getUsers($db, $search = null, $sort = null, $order = 'asc') {
-    // TODO: Build a SELECT query for id, name, email, is_admin, created_at.
-    //       Do NOT select the password column.
-    $allowedSort = ['name', 'id', 'email','is_admin'];
+    $allowedSort = ['name', 'id', 'email', 'is_admin'];
     $allowedOrder = ['asc', 'desc'];
 
     $sql = "SELECT id, name, email, is_admin, created_at FROM users";
     $params = [];
-    // TODO: If the 'search' query parameter is present, append a WHERE clause:
-    //       WHERE name LIKE :search OR email LIKE :search
-    //       Wrap the search term with '%' wildcards when binding.
+
     if (!empty($search)) {
-        $sql .= " WHERE name LIKE :search1 OR email LIKE :search2";
-        $params[':search1'] = "%$search%";
-        $params[':search2'] = "%$search%";
-        }
-    // TODO: If the 'sort' query parameter is present and is one of the allowed
-    //       fields (name, email, is_admin), append an ORDER BY clause.
-    //       If 'order' is 'desc', use DESC; otherwise default to ASC.
+        $sql .= " WHERE name LIKE :search OR email LIKE :search";
+        $params['search'] = "%$search%";
+    }
+
     if ($sort && in_array($sort, $allowedSort)) {
-
-    $order = strtolower($order);
-    $order = in_array($order, $allowedOrder) ? $order : 'asc';
-
-    $sql .= " ORDER BY $sort $order";
-
+        $order = strtolower($order);
+        $order = in_array($order, $allowedOrder) ? $order : 'asc';
+        $sql .= " ORDER BY $sort $order";
     } else {
         $sql .= " ORDER BY name ASC";
     }
 
-
-    try{
-    // TODO: Prepare the statement, bind any parameters, and execute.
+    try {
         $stmt = $db->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value);
-        }
-      $stmt->execute();
-    // TODO: Fetch all rows as an associative array.
+        $stmt->execute($params);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    // TODO: Call sendResponse() with the array and HTTP status 200.
-    sendResponse(['success' => true, 'data' => $users]);
-}catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-}
+        sendResponse(['success' => true, 'data' => $users]);
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    }
 }
 
 
