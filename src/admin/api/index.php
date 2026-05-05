@@ -102,37 +102,29 @@ $order  = $_GET['order'] ?? null;
  *     to prevent SQL injection before interpolating it into the ORDER BY clause.
  *   - Validate the 'order' value; only accept 'asc' or 'desc'.
  */
-function getUsers($db, $search = null, $sort = null, $order = 'asc') {
-    $allowedSort = ['name', 'id', 'email', 'is_admin'];
-    $allowedOrder = ['asc', 'desc'];
+function getUsers($db) {
+    global $search, $sort, $order;
 
     $sql = "SELECT id, name, email, is_admin, created_at FROM users";
     $params = [];
 
     if (!empty($search)) {
         $sql .= " WHERE name LIKE :search OR email LIKE :search";
-        $params['search'] = "%$search%";
+        $params['search'] = "%" . $search . "%";
     }
 
-    if ($sort && in_array($sort, $allowedSort)) {
-        $order = strtolower($order);
-        $order = in_array($order, $allowedOrder) ? $order : 'asc';
-        $sql .= " ORDER BY $sort $order";
-    } else {
-        $sql .= " ORDER BY name ASC";
+    $allowedSort = ['name', 'email', 'is_admin'];
+    if (!empty($sort) && in_array($sort, $allowedSort, true)) {
+        $direction = $order === 'desc' ? 'DESC' : 'ASC';
+        $sql .= " ORDER BY {$sort} {$direction}";
     }
 
-    try {
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        sendResponse(['success' => true, 'data' => $users]);
-    } catch (Exception $e) {
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-    }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    sendResponse($users, 200);
 }
-
 
 /**
  * Function: Get a single user by primary key.
@@ -477,7 +469,7 @@ try {
         if (!empty($id)) {
             getUserById($db, $id);
         } else {
-             getUsers($db, $search, $sort, $order);
+             getUsers($db);
         }
 
 
