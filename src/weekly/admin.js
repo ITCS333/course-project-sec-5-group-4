@@ -1,7 +1,7 @@
 
 
 // --- Start Application ---
-startupInitialization();
+
 
 /*
   Requirement: Make the "Manage Weekly Breakdown" page interactive.
