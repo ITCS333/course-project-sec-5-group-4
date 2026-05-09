@@ -122,19 +122,20 @@ function isValidPassword(password) {
     });
 
     const data = await response.json();
-
     if (data.success) {
+      sessionStorage.setItem("user", JSON.stringify(data.user));
       displayMessage("Login successful!", "success");
-
       emailInput.value = "";
       passwordInput.value = "";
 
-   window.location.href = "../admin/manage_users.html";
-
+      if (data.user.is_admin == 1) {
+        window.location.href = "../admin/manage_users.html";
+      } else {
+        window.location.href = "../../index.html";
+      }
     } else {
-      displayMessage(data.message || "Login failed", "error");
+      displayMessage(data.message || "Login failed.", "error");
     }
-
   } catch (error) {
     console.error(error);
     displayMessage("Server error. Try again.", "error");

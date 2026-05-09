@@ -29,7 +29,7 @@
  *   { "success": true,  "data": ... }اق
  *   { "success": false, "message": "..." }
  */
-
+require_once '../../common/db.php';
 
 // TODO: Set headers for JSON response and CORS.
 // Set Content-Type to application/json.

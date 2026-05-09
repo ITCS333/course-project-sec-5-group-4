@@ -1,5 +1,8 @@
 <?php
 
+
+require_once '../../common/db.php';
+
 // ============================================================================
 // HEADERS AND INITIALIZATION
 // ============================================================================
@@ -13,10 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once './config/Database.php';
 
-$database = new Database();
-$db = $database->getConnection();
+$db = getDBConnection();
 
 $method = $_SERVER['REQUEST_METHOD'];
 

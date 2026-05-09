@@ -1,4 +1,7 @@
 <?php
+
+
+require_once '../../common/db.php';
 session_start();
 
 header('Content-Type: application/json');

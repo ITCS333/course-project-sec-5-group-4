@@ -1,22 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITCS333 Course</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Portal | ITCS333</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+    }
+
+    h1 { font-size: 1.5rem; color: #1e293b; margin-bottom: 8px; }
+    p { color: #64748b; font-size: 0.95rem; margin-bottom: 32px; }
+
+    a.btn {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      text-decoration: none;
+      padding: 12px 36px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    a.btn:hover { background: #1d4ed8; }
+
+    .footer { margin-top: 32px; font-size: 0.78rem; color: #94a3b8; }
+
+    /* بعد اللوقن */
+    ul { list-style: none; text-align: left; margin-bottom: 24px; }
+    ul li a {
+      display: block;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      color: #1e293b;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      transition: background 0.15s;
+    }
+    ul li a:hover { background: #eff6ff; color: #2563eb; }
+
+    .admin-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #f97316;
+      margin-bottom: 6px;
+      display: block;
+      text-align: left;
+    }
+    #admin-links li a { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+    #admin-links li a:hover { background: #ffedd5; color: #c2410c; }
+
+    .btn-logout {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #fca5a5;
+      background: none;
+      color: #dc2626;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-logout:hover { background: #fef2f2; }
+  </style>
 </head>
 <body>
 
-    <header>
-        <div id="navbar">
-            
+<div class="card">
+  <h1>ITCS333 Course Portal</h1>
+  <p>Internet Software Development<br>University of Bahrain</p>
 
-        </div>
-    </header>
+  <!-- قبل اللوقن -->
+  <div id="guest-view">
+    <a href="src/auth/login.html" class="btn">Login</a>
+  </div>
 
+  <!-- بعد اللوقن -->
+  <div id="user-view" style="display:none">
 
+    <div id="admin-links" style="display:none">
+      <span class="admin-label">Admin</span>
+      <ul>
+        <li><a href="src/admin/manage_users.html">Manage Users</a></li>
+        <li><a href="src/resources/admin.html">Manage Resources</a></li>
+        <li><a href="src/weekly/admin.html">Manage Weekly Breakdown</a></li>
+        <li><a href="src/assignments/admin.html">Manage Assignments</a></li>
+      </ul>
+    </div>
 
+    <ul>
+      <li><a href="src/resources/list.html">Course Resources</a></li>
+      <li><a href="src/weekly/list.html">Weekly Breakdown</a></li>
+      <li><a href="src/assignments/list.html">Assignments</a></li>
+      <li><a href="src/discussion/board.html">Discussion Board</a></li>
+    </ul>
 
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="footer">Section 5 · Group 4</div>
+</div>
+
+<script>
+  function checkUser() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (user) {
+      document.getElementById("guest-view").style.display = "none";
+      document.getElementById("user-view").style.display = "block";
+      if (user.is_admin == 1) {
+        document.getElementById("admin-links").style.display = "block";
+      }
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem("user");
+    window.location.reload();
+  }
+
+  window.onload = checkUser;
+</script>
 
 </body>
 </html>
