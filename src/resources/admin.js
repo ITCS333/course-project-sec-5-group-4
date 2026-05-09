@@ -15,7 +15,7 @@ function createResourceRow(resource) {
   tr.innerHTML = `
     <td>${resource.title}</td>
     <td>${resource.description}</td>
-    <td><a href="${resource.link}" target="_blank">Visit</a></td>
+    <<td><a href="${resource.link}" target="_blank">${resource.link}</a></td>
     <td>
       <button class="edit-btn" data-id="${resource.id}">Edit</button>
       <button class="delete-btn" data-id="${resource.id}">Delete</button>
