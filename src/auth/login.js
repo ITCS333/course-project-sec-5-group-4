@@ -127,12 +127,7 @@ function isValidPassword(password) {
       displayMessage("Login successful!", "success");
       emailInput.value = "";
       passwordInput.value = "";
-
-      if (data.user.is_admin == 1) {
-        window.location.href = "../admin/manage_users.html";
-      } else {
-        window.location.href = "../../index.html";
-      }
+      window.location.href = "../../index.html";
     } else {
       displayMessage(data.message || "Login failed.", "error");
     }
