@@ -115,7 +115,7 @@ document.getElementById("current-password").value = "";
 document.getElementById("new-password").value = "";
 document.getElementById("confirm-password").value = "";
 
-  fetch('../api/index.php?action=change_password', {
+  fetch('../admin/api/index.php?action=change_password', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -181,7 +181,7 @@ function handleAddUser(event) {
     return;
   }
 
-  fetch('../api/index.php', {
+  fetch('../admin/api/index.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
@@ -233,7 +233,7 @@ function handleTableClick(event) {
   // DELETE
   if (event.target.classList.contains("delete-btn")) {
 
-    fetch(`../api/index.php?id=${encodeURIComponent(id)}`, {
+    fetch(`../admin/api/index.php?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
       credentials: "same-origin"
     })
@@ -265,7 +265,7 @@ function handleTableClick(event) {
 
     if (!newName || !newEmail) return;
 
-    fetch("../api/index.php", {
+    fetch("../admin/api/index.php", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
@@ -411,7 +411,7 @@ function handleSort(event) {
  */
 async function loadUsersAndInitialize() {
   try {
-    const response = await fetch('../api/index.php');
+    const response = await fetch('../admin/api/index.php');
 
     if (!response.ok) {
       console.error("Failed to fetch users:", response.status);
@@ -423,12 +423,12 @@ async function loadUsersAndInitialize() {
     users = result.data || [];
     renderTable(users);
 
-    addUserForm.addEventListener("submit", handleAddUser, { once: true });
-    passwordForm.addEventListener("submit", handleChangePassword, { once: true });
-    userTableBody.addEventListener("click", handleTableClick, { once: true });
-    searchInput.addEventListener("input", handleSearch, { once: true });
+    addUserForm.addEventListener("submit", handleAddUser);
+passwordForm.addEventListener("submit", handleChangePassword);
+userTableBody.addEventListener("click", handleTableClick);
+searchInput.addEventListener("input", handleSearch);
     tableHeaders.forEach(th => {
-      th.addEventListener("click", handleSort, { once: true });
+      th.addEventListener("click", handleSort,);
     });
 
   } catch (error) {
