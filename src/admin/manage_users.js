@@ -13,7 +13,7 @@
 // This array will be populated with data fetched from the PHP API.
 // It acts as a client-side cache so search and sort work without extra network calls.
 let users = [];
-const loggedInUserId = 1;
+const loggedInUserId = JSON.parse(sessionStorage.getItem("user"))?.id || 1;
 // --- Element Selections ---
 // We can safely select elements here because 'defer' guarantees
 // the HTML document is parsed before this script runs.
@@ -169,7 +169,7 @@ function handleAddUser(event) {
   const name = document.getElementById("user-name").value.trim();
   const email = document.getElementById("user-email").value.trim();
   const password = document.getElementById("default-password").value;
-  const isAdmin = document.getElementById("is-admin").checked ? 1 : 0;
+const isAdmin = parseInt(document.getElementById("is-admin").value);
 
   if (!name || !email || !password) {
     alert("Please fill out all required fields.");

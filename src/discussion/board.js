@@ -205,7 +205,7 @@ async function handleUpdateTopic(id, fields) {
   const result= await response.json();
 
   if(result.success === true){
-    topics.map(topic=>{
+    topics = topics.map(topic => {
       if(String(topic.id)==String(id)){
         return{
           ...topic,
@@ -266,9 +266,9 @@ async function handleTopicListClick(event) {
     document.querySelector('#topic-subject').value= topic.subject;
     document.querySelector('#topic-message').value= topic.message;
 
-    changeBtn=document.querySelector('#create-topic');
+    const changeBtn = document.querySelector('#create-topic');
     changeBtn.textContent= "Update Topic";
-    changeBtn.dataset.id=topic.id;
+    changeBtn.dataset.editId = topic.id;
   }
 }
 

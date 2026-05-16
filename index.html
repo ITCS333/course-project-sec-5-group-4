@@ -94,12 +94,11 @@
   <h1>ITCS333 Course Portal</h1>
   <p>Internet Software Development<br>University of Bahrain</p>
 
-  <!-- قبل اللوقن -->
+
   <div id="guest-view">
     <a href="src/auth/login.html" class="btn">Login</a>
   </div>
 
-  <!-- بعد اللوقن -->
   <div id="user-view" style="display:none">
 
     <div id="admin-links" style="display:none">
@@ -108,16 +107,16 @@
         <li><a href="src/admin/manage_users.html">Manage Users</a></li>
         <li><a href="src/resources/admin.html">Manage Resources</a></li>
         <li><a href="src/weekly/admin.html">Manage Weekly Breakdown</a></li>
-        <li><a href="src/assignments/admin.html">Manage Assignments</a></li>
       </ul>
     </div>
 
-    <ul>
-      <li><a href="src/resources/list.html">Course Resources</a></li>
-      <li><a href="src/weekly/list.html">Weekly Breakdown</a></li>
-      <li><a href="src/assignments/list.html">Assignments</a></li>
-      <li><a href="src/discussion/board.html">Discussion Board</a></li>
-    </ul>
+    <div id="user-links">
+      <ul>
+        <li><a href="src/resources/list.html">Course Resources</a></li>
+        <li><a href="src/weekly/list.html">Weekly Breakdown</a></li>
+        <li><a href="src/discussion/board.html">Discussion Board</a></li>
+      </ul>
+    </div>
 
     <button class="btn-logout" onclick="logout()">Logout</button>
   </div>
@@ -133,6 +132,10 @@
       document.getElementById("user-view").style.display = "block";
       if (user.is_admin == 1) {
         document.getElementById("admin-links").style.display = "block";
+        document.getElementById("user-links").style.display = "none";
+      } else {
+        document.getElementById("admin-links").style.display = "none";
+        document.getElementById("user-links").style.display = "block";
       }
     }
   }
