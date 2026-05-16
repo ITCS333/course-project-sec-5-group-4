@@ -214,7 +214,7 @@ async function handleUpdateTopic(id, fields) {
         };
       }
       return topic;
-    })
+    });
     renderTopics();
   }
 }
