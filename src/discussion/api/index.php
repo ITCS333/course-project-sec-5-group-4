@@ -1,7 +1,7 @@
 <?php
 
 
-require_once '../../common/db.php';
+
 /**
  * Discussion Board API
  *
