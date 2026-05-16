@@ -287,7 +287,7 @@ function updateTopic(PDO $db, array $data): void
 
     // TODO: Check that a topic with this id exists.
     // If not, sendResponse HTTP 404.
-    $stmt=$db->prepare('SELECT * FROM topics WHERE id = ?');
+    $stmt=$db->prepare('SELECT id FROM topics WHERE id = ?');
     $stmt->execute([$data['id']]);
 
     if(!$stmt->fetch(PDO::FETCH_ASSOC)){
